@@ -1,0 +1,1899 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Juan Lozano Calderón · Fuerza Alienígena</title>
+<meta name="description" content="Página personal de Juan Lozano Calderón — Taller 3: Servidor web Apache en AWS EC2, Universidad Católica de Colombia.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   PALETA "FUERZA ALIENÍGENA" — verde energía sobre negro
+   ========================================================= */
+:root{
+  --bg:#030805; --bg2:#06130a; --panel:#0b1d10; --panel2:#102a16;
+  --line:rgba(120,255,100,.14);
+  --ink:#d4e5ff; --muted:#8db4f0; --dim:#6a8cc4;
+  --pink:#3dff2e; --cyan:#4db1ff; --sun:#d4ff00; --violet:#0b7a26; --lime:#7dff5a;
+  --glow-pink:0 0 18px rgba(61,255,46,.55);
+  --glow-cyan:0 0 18px rgba(77,177,255,.5);
+  --r:18px;
+  --display:"Chakra Petch",system-ui,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:var(--cyan)}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:6px}
+.wrap{width:min(1180px,100% - 32px);margin-inline:auto}
+
+/* ---------- PANTALLA DE INICIO (estilo Geometry Dash) ---------- */
+#start{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,#0b3a14 0%,var(--bg) 70%);transition:opacity .7s,visibility .7s}
+#start.hide{opacity:0;visibility:hidden}
+.start-box{text-align:center;padding:24px;width:min(520px,100%)}
+.start-box h1{font-family:"Orbitron",var(--display);font-weight:400;font-size:clamp(30px,7vw,56px);font-weight:900;letter-spacing:2px;color:#cfe6ff;text-shadow:var(--glow-pink),0 0 40px rgba(61,255,46,.4);line-height:1.1}
+.start-box p{color:var(--muted);margin:14px 0 26px;font-family:var(--display);letter-spacing:.5px}
+.load{height:22px;border:2px solid #fff;border-radius:12px;padding:3px;background:#000;box-shadow:var(--glow-cyan)}
+.load span{display:block;height:100%;width:0;border-radius:8px;background:linear-gradient(90deg,var(--lime),#3dff9e);transition:width .25s}
+.load-pct{font-family:var(--display);margin-top:8px;color:var(--lime);font-weight:700}
+.btn-start{margin-top:24px;font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:2px;padding:14px 34px;border-radius:14px;background:radial-gradient(circle at 50% 30%,#8dff6e,#1fc21a);color:#031005;border:3px solid #fff;box-shadow:0 6px 0 #0b5e12,var(--glow-pink);opacity:.35;pointer-events:none;transition:transform .15s,opacity .3s}
+.btn-start.ready{opacity:1;pointer-events:auto;animation:pulse 1.4s infinite}
+.btn-start:active{transform:translateY(4px);box-shadow:0 2px 0 #0d6b1f}
+.start-skip{display:block;margin:14px auto 0;color:var(--dim);font-size:14px;text-decoration:underline}
+@keyframes pulse{50%{transform:scale(1.06)}}
+
+/* ---------- BARRA DE PROGRESO DEL "NIVEL" ---------- */
+#lvl{position:fixed;top:0;left:0;right:0;z-index:60;height:6px;background:rgba(0,0,0,.4)}
+#lvl i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--lime),var(--cyan),var(--pink));box-shadow:0 0 10px var(--cyan)}
+
+/* ---------- NAV ---------- */
+nav.top{position:fixed;top:6px;left:0;right:0;z-index:50;transition:background .3s,backdrop-filter .3s}
+nav.top.solid{background:rgba(3,8,5,.82);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:16px;height:58px}
+.brand{font-family:var(--display);font-weight:700;letter-spacing:1px;text-decoration:none;color:#cfe6ff;display:flex;gap:8px;align-items:center;white-space:nowrap}
+.brand b{color:var(--pink);text-shadow:var(--glow-pink)}
+.links{display:flex;gap:4px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+.links::-webkit-scrollbar{display:none}
+.links a{font-family:var(--display);font-weight:600;font-size:14px;color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:10px;white-space:nowrap;transition:.2s}
+.links a:hover,.links a.on{color:var(--pink);background:rgba(61,255,46,.16);box-shadow:inset 0 0 0 1px rgba(61,255,46,.4)}
+.lvl-pct{font-family:var(--display);font-weight:700;color:var(--lime);font-size:13px;min-width:44px;text-align:right}
+@media (max-width:820px){.brand span{display:none}.lvl-pct{display:none}}
+
+/* ---------- HERO ---------- */
+header.hero{position:relative;min-height:100svh;display:grid;place-items:center;overflow:hidden;isolation:isolate}
+#sky{position:absolute;inset:0;z-index:-2;width:100%;height:100%}
+.dial{position:absolute;left:50%;top:46%;width:min(520px,82vw);aspect-ratio:1;transform:translate(-50%,-50%);z-index:-1;pointer-events:none}
+.dial i{position:absolute;border-radius:50%}
+.dial .r1{inset:0;border:2px solid rgba(61,255,46,.35);box-shadow:0 0 40px rgba(61,255,46,.25),inset 0 0 60px rgba(61,255,46,.15)}
+.dial .r2{inset:7%;border:10px dashed rgba(61,255,46,.45);animation:spin 26s linear infinite}
+.dial .r3{inset:18%;border:2px solid rgba(77,177,255,.35);background:radial-gradient(circle,rgba(61,255,46,.22),rgba(3,8,5,.2) 62%);animation:spin 40s linear infinite reverse}
+.dial .r3::before,.dial .r3::after{content:"";position:absolute;left:50%;top:-6px;width:12px;height:12px;margin-left:-6px;border-radius:2px;background:var(--pink);box-shadow:var(--glow-pink);transform:rotate(45deg)}
+.dial .r3::after{top:auto;bottom:-6px}
+.dial .gem{position:absolute;inset:36%;border:3px solid var(--pink);transform:rotate(45deg);border-radius:14%;box-shadow:var(--glow-pink),inset 0 0 30px rgba(61,255,46,.5);animation:breathe 3.2s ease-in-out infinite}
+.dial .gem::after{content:"";position:absolute;inset:28%;border-radius:50%;background:radial-gradient(circle,#eaffdf,var(--pink) 45%,transparent 70%)}
+@keyframes breathe{50%{box-shadow:0 0 50px rgba(61,255,46,.9),inset 0 0 40px rgba(61,255,46,.7)}}
+#flash{position:fixed;inset:0;z-index:110;pointer-events:none;background:radial-gradient(circle,#eaffdf 0%,#3dff2e 35%,rgba(3,8,5,0) 75%);opacity:0}
+#flash.go{animation:flash 1s ease-out}
+@keyframes flash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+.grid{position:absolute;left:-50%;right:-50%;bottom:-10%;height:42%;z-index:-1;
+  background-image:linear-gradient(var(--pink) 2px,transparent 2px),linear-gradient(90deg,var(--pink) 2px,transparent 2px);
+  background-size:60px 60px;transform:perspective(320px) rotateX(62deg);transform-origin:top;
+  animation:gridmove 1.6s linear infinite;opacity:.55;
+  -webkit-mask:linear-gradient(180deg,transparent,#000 35%);mask:linear-gradient(180deg,transparent,#000 35%)}
+@keyframes gridmove{to{background-position:0 60px}}
+.hero-in{text-align:center;padding:110px 16px 120px}
+.kicker{font-family:var(--display);color:var(--cyan);letter-spacing:4px;font-weight:600;font-size:14px;text-shadow:var(--glow-cyan)}
+.hero h1{font-family:"Orbitron",var(--display);font-weight:400;font-size:clamp(38px,8.5vw,100px);font-weight:900;letter-spacing:2px;line-height:1.05;margin:14px 0 6px;color:#cfe6ff;text-shadow:0 0 6px #fff,0 0 22px var(--pink),0 0 60px rgba(61,255,46,.6)}
+.typed{text-shadow:0 2px 12px #030805,0 0 4px #030805;font-family:var(--display);font-size:clamp(17px,2.6vw,24px);min-height:1.6em;color:var(--ink)}
+.typed::after{content:"▌";color:var(--pink);animation:blink 1s steps(1) infinite;margin-left:2px}
+@keyframes blink{50%{opacity:0}}
+.badge{margin:30px auto 0;display:inline-grid;grid-template-columns:auto auto;gap:6px 18px;text-align:left;padding:16px 22px;border-radius:16px;background:rgba(6,19,10,.72);border:1px solid rgba(77,177,255,.4);box-shadow:var(--glow-cyan);backdrop-filter:blur(6px);font-size:14px}
+.badge dt{color:var(--cyan);font-family:var(--display);font-weight:600;letter-spacing:.5px}
+.badge dd{color:var(--ink)}
+.scroll-hint{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);font-family:var(--display);color:var(--muted);font-size:13px;letter-spacing:2px;animation:bob 2s infinite}
+@keyframes bob{50%{transform:translate(-50%,6px)}}
+
+/* ---------- SECCIONES ---------- */
+section{padding:96px 0 40px;position:relative}
+.sec-head{margin-bottom:36px}
+.sec-num{font-family:var(--display);color:var(--pink);font-weight:700;letter-spacing:3px;font-size:14px}
+.sec-head h2{font-family:var(--display);font-size:clamp(32px,5vw,54px);line-height:1.05;margin:6px 0 10px;background:linear-gradient(90deg,#a8d4ff,#3d8bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sec-head p{color:var(--muted);max-width:68ch}
+h3{font-family:var(--display);font-size:clamp(22px,3vw,30px);margin:56px 0 18px;display:flex;align-items:center;gap:10px}
+h3::before{content:"";width:12px;height:12px;border-radius:3px;background:var(--pink);box-shadow:var(--glow-pink);transform:rotate(45deg);flex:none}
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .8s,transform .8s}
+.reveal.in{opacity:1;transform:none}
+
+.card{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+.two>*{min-width:0}
+@media (max-width:860px){.two{grid-template-columns:1fr}}
+
+/* tarjetas de persona */
+.people{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.person{position:relative;overflow:hidden}
+.person .role{font-family:var(--display);color:var(--cyan);font-size:13px;letter-spacing:1px;text-transform:uppercase}
+.person h4{font-family:var(--display);font-size:22px;margin:2px 0 6px}
+.person p{color:var(--muted);font-size:15px}
+.person::after{content:"";position:absolute;right:-40px;top:-40px;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,rgba(61,255,46,.35),transparent 70%)}
+
+/* ---------- CARRUSEL ---------- */
+.carousel{position:relative}
+.track{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;padding:4px 2px 14px;scrollbar-width:none;overscroll-behavior-x:contain}
+.track::-webkit-scrollbar{display:none}
+.slide{flex:0 0 auto;width:min(340px,78vw);scroll-snap-align:center;margin:0;position:relative;border-radius:16px;overflow:hidden;background:#000;border:1px solid var(--line);cursor:zoom-in;transition:transform .35s,box-shadow .35s}
+.carousel.wide .slide{width:min(520px,86vw)}
+.slide img{width:100%;height:380px;object-fit:cover;transition:transform .6s}
+.carousel.wide .slide img{height:340px}
+.slide:hover img{transform:scale(1.05)}
+.slide:hover{box-shadow:0 0 0 2px var(--pink),var(--glow-pink)}
+.slide figcaption{position:absolute;left:0;right:0;bottom:0;padding:34px 14px 12px;font-family:var(--display);font-weight:600;font-size:15px;background:linear-gradient(transparent,rgba(2,6,3,.92))}
+.slide .tag{position:absolute;top:10px;left:10px;font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:1px;padding:4px 9px;border-radius:8px;background:var(--pink);color:#031005;box-shadow:var(--glow-pink)}
+.c-btn{position:absolute;top:calc(50% - 30px);width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:rgba(3,8,5,.85);border:1px solid rgba(255,255,255,.25);z-index:2;transition:.2s}
+.c-btn:hover{color:#031005;background:var(--pink);box-shadow:var(--glow-pink)}
+.c-prev{left:-10px}.c-next{right:-10px}
+@media (max-width:640px){.c-btn{display:none}}
+.dots{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.dots button{width:8px;height:8px;border-radius:5px;background:rgba(255,255,255,.25);transition:.25s;padding:0}
+.dots button.on{width:24px;background:var(--cyan);box-shadow:var(--glow-cyan)}
+
+
+
+/* ---------- CORREO ---------- */
+.mail{background:#fff;color:#202124;border-radius:16px;padding:22px 24px;font-family:Arial,var(--body);box-shadow:0 20px 50px rgba(0,0,0,.45);position:relative}
+.mail .subj{font-size:22px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mail .chip{font-size:12px;background:#e8eaed;padding:2px 8px;border-radius:5px;color:#444}
+.mail .from{display:flex;gap:12px;align-items:center;margin:16px 0 14px}
+.mail .av{width:40px;height:40px;border-radius:50%;background:#0b57d0;color:#fff;display:grid;place-items:center;font-size:20px;font-weight:700;flex:none}
+.mail .meta{font-size:13px;color:#5f6368}
+.mail .meta b{color:#202124;font-size:15px}
+.mail .body{font-size:16px;line-height:1.7}
+.mail .sign{margin-top:14px;color:#444}
+.mail .stamp{position:absolute;right:18px;top:18px;font-size:12px;color:#5f6368}
+
+/* ---------- VIDEO CARDS ---------- */
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.vcard{position:relative;border-radius:16px;overflow:hidden;background:#000;border:1px solid var(--line);aspect-ratio:16/10;cursor:pointer;text-align:left;transition:transform .3s,box-shadow .3s}
+.vcard:hover{transform:translateY(-4px);box-shadow:0 0 0 2px var(--cyan),var(--glow-cyan)}
+.vcard img,.vcard video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.vcard video{opacity:0;transition:opacity .3s}
+.vcard.hov video{opacity:1}
+.vcard .vinfo{position:absolute;inset:auto 0 0 0;padding:30px 14px 12px;background:linear-gradient(transparent,rgba(2,6,3,.95))}
+.vcard .vinfo b{font-family:var(--display);font-size:17px;display:block}
+.vcard .vinfo small{color:var(--muted);font-size:13px}
+.vcard .play{position:absolute;top:12px;right:12px;width:40px;height:40px;border-radius:50%;background:rgba(61,255,46,.9);display:grid;place-items:center;box-shadow:var(--glow-pink);font-size:15px;color:#031005}
+.vcard .dur{position:absolute;top:14px;left:12px;font-size:12px;font-family:var(--display);background:rgba(0,0,0,.7);padding:2px 7px;border-radius:6px}
+
+/* ---------- TIMELINE ---------- */
+.timeline{position:relative;padding-left:34px}
+.timeline::before{content:"";position:absolute;left:11px;top:6px;bottom:6px;width:3px;border-radius:3px;background:linear-gradient(var(--cyan),var(--pink),var(--sun))}
+.tl{position:relative;margin-bottom:22px}
+.tl::before{content:"";position:absolute;left:-30px;top:20px;width:16px;height:16px;transform:rotate(45deg);border-radius:3px;background:var(--bg);border:3px solid var(--cyan);box-shadow:var(--glow-cyan)}
+.tl.pause::before{border-color:var(--sun);box-shadow:0 0 14px rgba(212,255,0,.7)}
+.tl.future::before{border-color:var(--pink);box-shadow:var(--glow-pink);animation:pulse 1.6s infinite}
+.tl .yr{font-family:var(--display);font-weight:700;color:var(--cyan);letter-spacing:1px}
+.tl.pause .yr{color:var(--sun)}.tl.future .yr{color:var(--pink)}
+.tl h4{font-family:var(--display);font-size:20px;margin:2px 0 6px}
+.tl p{color:var(--muted)}
+.tl .thumb{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.tl .thumb img{border-radius:12px;height:150px;width:100%;object-fit:cover;cursor:zoom-in;border:1px solid var(--line)}
+.quote{font-family:var(--display);font-size:clamp(24px,3.6vw,38px);font-weight:700;text-align:center;padding:40px 16px;line-height:1.25}
+.quote em{font-style:normal;color:var(--lime);text-shadow:0 0 16px rgba(155,255,79,.5)}
+
+/* ---------- HUB CIBERSEGURIDAD ---------- */
+.hub{position:relative;aspect-ratio:1;max-width:460px;margin:10px auto 40px}
+.hub .core{position:absolute;inset:32%;border-radius:50%;display:grid;place-items:center;text-align:center;font-family:var(--display);font-weight:700;font-size:clamp(14px,2.2vw,19px);background:radial-gradient(circle,#0f4a1c,#06130a);border:2px solid var(--pink);box-shadow:var(--glow-pink),inset 0 0 30px rgba(61,255,46,.4);padding:10px}
+.hub .ring{position:absolute;inset:6%;border:1px dashed rgba(77,177,255,.45);border-radius:50%;animation:spin 40s linear infinite}
+.hub .node{position:absolute;transform:translate(-50%,-50%);font-family:var(--display);font-weight:600;font-size:13px;text-align:center;padding:8px 12px;border-radius:12px;background:var(--panel2);border:1px solid rgba(77,177,255,.5);box-shadow:var(--glow-cyan);width:136px;transition:.25s}
+.hub .node:hover{background:var(--cyan);color:#030805;transform:translate(-50%,-50%) scale(1.08)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (max-width:560px){.hub{width:calc(100% - 90px)}.hub .node{width:104px;font-size:11.5px;padding:6px 8px}}
+section{overflow-x:clip}
+
+/* ---------- TERMINAL ---------- */
+.term{background:#020603;border:1px solid rgba(155,255,79,.35);border-radius:14px;overflow:hidden;font-family:ui-monospace,"Cascadia Code",Consolas,monospace;font-size:14px;box-shadow:0 0 24px rgba(155,255,79,.12)}
+.term .bar{display:flex;gap:6px;padding:10px 12px;background:#0a1a0e}
+.term .bar i{width:11px;height:11px;border-radius:50%;background:#ff5f57}.term .bar i:nth-child(2){background:#febc2e}.term .bar i:nth-child(3){background:#28c840}
+.term .bar span{margin-left:8px;color:var(--dim);font-size:12px}
+.term pre{padding:16px;color:#c9ffb0;white-space:pre-wrap;min-height:260px;line-height:1.7}
+.term .p{color:var(--cyan)}.term .ok{color:var(--lime)}.term .wip{color:var(--sun)}
+
+.imgrow{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.imgrow img{border-radius:12px;height:130px;width:100%;object-fit:cover;background:#fff;cursor:zoom-in;border:1px solid var(--line)}
+@media (max-width:560px){.imgrow{grid-template-columns:1fr 1fr}}
+
+/* ---------- DOCENTES ---------- */
+.teach-tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.teach-tools input{flex:1;min-width:200px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit}
+.teach-tools button{font-family:var(--display);font-weight:700;padding:12px 16px;border-radius:12px;background:linear-gradient(135deg,var(--cyan),var(--violet));color:#030805}
+.cloud{display:flex;flex-wrap:wrap;gap:10px}
+.chip{font-family:var(--display);font-weight:600;padding:9px 15px;border-radius:999px;background:var(--panel);border:1px solid var(--line);transition:.25s;cursor:default}
+.chip:hover{border-color:var(--cyan);color:var(--cyan);transform:translateY(-2px)}
+.chip.star{background:linear-gradient(135deg,var(--pink),var(--sun));color:#031005;border-color:transparent;box-shadow:var(--glow-pink);transform:scale(1.12)}
+.chip.hide{display:none}
+.spot{margin-top:18px;font-family:var(--display);font-size:20px;min-height:1.5em;color:var(--sun)}
+
+
+/* ---------- LISTAS ENLAZADAS ---------- */
+.ll-intro{color:var(--muted);max-width:72ch;margin-bottom:18px}
+.ll-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.ll-meta span{font-family:var(--display);font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;background:var(--panel);border:1px solid rgba(77,177,255,.4);color:var(--cyan)}
+.code pre{min-height:0;max-height:520px;overflow:auto;white-space:pre;font-size:13px;line-height:1.55;color:#c9ffb0}
+.code .kw{color:var(--cyan)}.code .st{color:var(--sun)}
+.code .cfn{display:block;border-left:3px solid transparent;margin-left:-16px;padding-left:13px;transition:background .3s,border-color .3s}
+.code .cfn.hot{background:rgba(61,255,46,.13);border-color:var(--pink)}
+.code .bar button{margin-left:auto;font-family:var(--display);font-size:12px;font-weight:600;color:var(--muted);padding:2px 10px;border-radius:6px;border:1px solid var(--line)}
+.code .bar button:hover{color:var(--pink);border-color:var(--pink)}
+.sim h4{font-family:var(--display);font-size:20px;margin-bottom:4px}
+.sim>p{color:var(--muted);font-size:14px;margin-bottom:14px}
+.sim-ctrl{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.sim-ctrl input{width:110px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+.sim-ctrl button{font-family:var(--display);font-weight:700;font-size:14px;padding:10px 14px;border-radius:12px;background:var(--panel2);border:1px solid rgba(77,177,255,.5);transition:.2s}
+.sim-ctrl button:hover:not(:disabled){background:var(--cyan);color:#030805}
+.sim-ctrl button.go{background:linear-gradient(135deg,var(--pink),#1fc21a);color:#031005;border-color:transparent}
+.sim-ctrl button:disabled{opacity:.4;cursor:not-allowed}
+.ll{display:flex;flex-wrap:wrap;align-items:center;gap:8px 4px;min-height:96px;padding:18px 14px;border-radius:14px;background:var(--bg);border:1px dashed var(--line)}
+.ll .lbl{font-family:var(--display);font-size:12px;color:var(--cyan);letter-spacing:1px;margin-right:4px}
+.nodo{display:flex;border:2px solid var(--cyan);border-radius:10px;overflow:hidden;font-family:var(--display);font-weight:700;box-shadow:var(--glow-cyan);animation:pop .35s;transition:transform .25s,border-color .25s,box-shadow .25s}
+.nodo b{padding:8px 12px;font-size:18px;min-width:44px;text-align:center}
+.nodo i{font-style:normal;padding:8px;background:var(--panel2);color:var(--dim);font-size:11px;display:grid;place-items:center;border-left:2px solid var(--cyan)}
+.nodo.cab{border-color:var(--pink);box-shadow:var(--glow-pink)}
+.nodo.aux{transform:translateY(-6px);border-color:var(--sun);box-shadow:0 0 18px rgba(212,255,0,.7)}
+.nodo.hit{background:var(--pink);color:#031005;border-color:#fff}
+.nodo.bye{animation:bye .45s forwards}
+.flecha{color:var(--cyan);font-weight:700}
+.null{font-family:ui-monospace,Consolas,monospace;font-size:13px;color:var(--dim);border:1px dashed var(--dim);border-radius:8px;padding:6px 8px}
+@keyframes pop{from{transform:scale(.4);opacity:0}}
+@keyframes bye{to{transform:scale(.3) translateY(20px);opacity:0}}
+.sim .term{margin-top:14px}
+.sim .term pre{min-height:120px;max-height:180px;overflow:auto;font-size:13px}
+.ll-learn{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:22px}
+.ll-learn div{padding:14px 16px;border-radius:14px;background:var(--panel);border:1px solid var(--line);font-size:14px;color:var(--muted)}
+.ll-learn b{display:block;color:var(--ink);font-family:var(--display);font-size:15px;margin-bottom:2px}
+
+
+/* ===================== MISIONES 06-08 ===================== */
+.lead2{color:var(--muted);max-width:80ch;margin-bottom:16px}
+.lead2 b{color:var(--ink)}
+h4.mini{font-family:var(--display);font-size:20px;margin:28px 0 10px;color:var(--ink)}
+.dimc{color:var(--dim)}
+.tabs4{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-bottom:22px;padding:4px}
+.tabs4 button{font-family:var(--display);font-weight:700;font-size:15px;padding:11px 18px;border-radius:12px;background:var(--panel);border:1px solid var(--line);white-space:nowrap;transition:.25s}
+.tabs4 button[aria-selected=true]{background:linear-gradient(135deg,var(--cyan),#2a6fff);color:#030805;box-shadow:var(--glow-cyan);border-color:transparent}
+.tpanel{display:none}.tpanel.on{display:block;animation:fade .45s}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}}
+/* git */
+#gitOut{min-height:200px;max-height:260px;overflow:auto;font-size:13px}
+.gcmds{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.gcmds button{font-family:ui-monospace,Consolas,monospace;font-size:13px;padding:8px 11px;border-radius:9px;background:#020603;border:1px solid rgba(77,177,255,.45);color:var(--cyan);transition:.2s}
+.gcmds button:hover:not(:disabled){background:var(--cyan);color:#030805}
+.gcmds button:disabled{opacity:.28;cursor:not-allowed}
+.gcmds button.hint{border-color:var(--pink);color:var(--pink);box-shadow:var(--glow-pink);animation:pulse 1.4s infinite}
+.gcmds button.rst{border-color:var(--dim);color:var(--dim)}
+.gview .ghead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-family:var(--display);margin-bottom:10px}
+.gcloud{font-size:13px;color:var(--dim);padding:3px 10px;border-radius:999px;border:1px solid var(--line)}
+.gcloud.on{color:#030805;background:var(--cyan);box-shadow:var(--glow-cyan)}
+.gsvg{overflow-x:auto;background:var(--bg);border-radius:12px;border:1px dashed var(--line);padding:6px}
+#gitSvg text{font-family:var(--display);font-size:11px;fill:var(--ink)}
+#gitSvg .lane{stroke:var(--line);stroke-dasharray:4 4}
+#gitSvg .edge{stroke:var(--cyan);stroke-width:2.5;fill:none}
+#gitSvg .cm{fill:var(--panel2);stroke:var(--cyan);stroke-width:3}
+#gitSvg .cm.up{fill:var(--cyan)}
+#gitSvg .cm.new{animation:pop .4s}
+#gitSvg .tagm{fill:var(--pink)}#gitSvg .tagf{fill:var(--sun)}#gitSvg .tago{fill:var(--cyan)}
+#gitSvg .tagt{fill:#030805;font-weight:700}
+.gexp{margin-top:12px;padding:12px 14px;border-radius:12px;background:rgba(61,255,46,.08);border-left:3px solid var(--pink);font-size:15px}
+.gexp b{display:block;font-family:var(--display);color:var(--pink);font-size:13px;letter-spacing:1px;text-transform:uppercase}
+/* fastapi */
+.code pre .dimc{color:var(--dim)}
+.browser{border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--panel)}
+.bbar{display:flex;align-items:center;gap:6px;padding:10px 12px;background:#0a1a0e}
+.bbar i{width:11px;height:11px;border-radius:50%;background:#ff5f57}.bbar i:nth-child(2){background:#febc2e}.bbar i:nth-child(3){background:#28c840}
+.burl{flex:1;margin-left:8px;font-family:ui-monospace,Consolas,monospace;font-size:12px;padding:5px 10px;border-radius:8px;background:var(--bg);color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.breqs{display:flex;flex-wrap:wrap;gap:8px;padding:12px}
+.breqs button{font-family:ui-monospace,Consolas,monospace;font-size:13px;font-weight:600;padding:8px 12px;border-radius:9px;background:var(--panel2);border:1px solid rgba(61,255,46,.4);color:var(--lime)}
+.breqs button:hover,.breqs button.on{background:var(--pink);color:#031005}
+.bview{min-height:200px;margin:0 12px 12px;border-radius:10px;padding:16px;background:var(--bg);border:1px solid var(--line);overflow:auto}
+.bview pre{font-family:ui-monospace,Consolas,monospace;color:#c9ffb0;font-size:14px}
+.bview .hdemo{background:#fff;color:#111;border-radius:8px;padding:18px;animation:pop .4s}
+.bview .hdemo h1{font-family:"Orbitron",var(--display);font-size:24px;background:linear-gradient(90deg,#1fc21a,#2a6fff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.bview .swag div{display:flex;gap:10px;align-items:center;padding:8px 10px;margin-bottom:6px;border-radius:6px;background:rgba(77,177,255,.12);border:1px solid rgba(77,177,255,.4);font-family:ui-monospace,Consolas,monospace;font-size:13px}
+.bview .swag b{background:#4db1ff;color:#030805;padding:2px 8px;border-radius:4px;font-size:12px}
+.bstatus{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--lime);margin-bottom:8px}
+/* flip cards */
+.flips{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.flip{perspective:900px;min-height:150px;cursor:pointer;text-align:left;display:block;width:100%;padding:0}
+.flip .fin{display:block;position:relative;width:100%;height:100%;min-height:150px;transition:transform .6s;transform-style:preserve-3d}
+.flip.on .fin{transform:rotateY(180deg)}
+.flip .ff,.flip .fb{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;padding:14px;display:flex;flex-direction:column;justify-content:center;border:1px solid var(--line)}
+.flip .ff{background:linear-gradient(160deg,var(--panel2),var(--bg2))}
+.flip .ff span{font-size:28px}
+.flip .ff b{font-family:var(--display);font-size:17px;margin-top:6px}
+.flip .ff small{color:var(--dim);font-size:12px;margin-top:4px}
+.flip .fb{transform:rotateY(180deg);background:linear-gradient(160deg,#0f3a1a,var(--panel));font-size:14px;color:var(--ink);border-color:rgba(61,255,46,.5)}
+/* arquitectura */
+.bridge{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.bstep{font-family:var(--display);font-weight:700;font-size:15px;padding:14px 8px;border-radius:14px;background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:6px;transition:.25s}
+.bstep span{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--bg);border:2px solid var(--cyan);color:var(--cyan)}
+.bstep.arch span{border-color:var(--pink);color:var(--pink)}
+.bstep.on{background:var(--panel2);border-color:var(--cyan);box-shadow:var(--glow-cyan);transform:translateY(-3px)}
+.bstep.arch.on{border-color:var(--pink);box-shadow:var(--glow-pink)}
+.bdeck{position:relative;height:70px;margin:6px 0 4px}
+.bdeck svg{width:100%;height:100%}
+.bdeck path{fill:none;stroke:var(--pink);stroke-width:4;stroke-dasharray:700;stroke-dashoffset:700;transition:stroke-dashoffset 1.2s;filter:drop-shadow(0 0 6px rgba(61,255,46,.7))}
+.bdeck.built path{stroke-dashoffset:0}
+.bdeck line{stroke:var(--line);stroke-width:2}
+.bdeck .bl,.bdeck .br{position:absolute;bottom:-4px;font-family:var(--display);font-size:13px;color:var(--cyan)}
+.bdeck .bl{left:0}.bdeck .br{right:0}
+.bexp{min-height:92px}
+.bexp b{font-family:var(--display);font-size:19px;display:block;margin-bottom:4px}
+.bexp p{color:var(--muted)}
+.qgrid{display:flex;flex-wrap:wrap;gap:8px}
+.qgrid button{font-family:var(--display);font-weight:600;padding:9px 14px;border-radius:999px;background:var(--panel);border:1px solid var(--line);transition:.2s}
+.qgrid button.on,.qgrid button:hover{border-color:var(--cyan);color:var(--cyan)}
+.qgrid button.star{background:linear-gradient(135deg,var(--pink),var(--sun));color:#031005;border-color:transparent}
+.qinfo{margin-top:12px;padding:14px;border-radius:12px;background:var(--panel);border:1px solid var(--line);color:var(--muted);min-height:84px}
+.qinfo b{color:var(--ink);font-family:var(--display)}
+.skills{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.skills div{padding:12px;border-radius:12px;background:var(--panel);border:1px solid var(--line);font-size:14px;color:var(--muted);transition:.25s}
+.skills div:hover{border-color:var(--pink);transform:translateY(-2px)}
+.skills b{display:block;color:var(--ink);font-family:var(--display);font-size:15px}
+@media (max-width:560px){.bridge{grid-template-columns:1fr 1fr}.skills{grid-template-columns:1fr}}
+/* portafolio */
+.ptrack,.ptrack2,.rtrack{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 2px 14px;scrollbar-width:thin;scrollbar-color:var(--cyan) transparent}
+.pcard{flex:0 0 auto;width:min(280px,80vw);scroll-snap-align:start;padding:18px;border-radius:16px;background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);transition:.3s;display:flex;flex-direction:column;gap:8px}
+.pcard .pn{font-family:"Orbitron",var(--display);font-weight:900;font-size:30px;color:var(--cyan);text-shadow:var(--glow-cyan)}
+.pcard h5{font-family:var(--display);font-size:18px}
+.pcard p{color:var(--muted);font-size:14px;flex:1}
+.pcard label{display:flex;gap:8px;align-items:center;font-family:var(--display);font-weight:600;font-size:14px;cursor:pointer}
+.pcard input{accent-color:var(--pink);width:18px;height:18px}
+.pcard.done{border-color:var(--pink);box-shadow:var(--glow-pink)}
+.pmeter{display:flex;gap:12px;align-items:center;margin-top:6px}
+.pmeter div{flex:1;height:12px;border-radius:8px;background:var(--panel);border:1px solid var(--line);overflow:hidden}
+.pmeter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--lime),var(--cyan));transition:width .4s}
+.pmeter span{font-family:var(--display);font-weight:700;color:var(--lime);font-size:14px;white-space:nowrap}
+/* venn */
+#venn{width:100%;max-width:440px;display:block;margin:auto;cursor:pointer}
+#venn .vc{fill-opacity:.16;stroke-width:2.5;transition:fill-opacity .3s,opacity .3s}
+#venn [data-c=D]{fill:#4db1ff;stroke:#4db1ff}#venn [data-c=I]{fill:#3dff2e;stroke:#3dff2e}#venn [data-c=C]{fill:#d4ff00;stroke:#d4ff00}
+#venn.sel .vc{opacity:.35}#venn.sel .vc.on{opacity:1;fill-opacity:.42}
+#venn text{font-family:var(--display);font-weight:700;font-size:14px;fill:var(--ink);text-anchor:middle;pointer-events:none}
+#venn text.sm{font-size:12px;fill:#eaffdf}
+#venn text.core{font-size:22px;fill:#fff}
+.vcap{text-align:center;color:var(--dim);font-size:13px;margin-top:8px}
+.vbtns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.vbtns button{font-family:var(--display);font-weight:600;font-size:13px;padding:7px 12px;border-radius:999px;background:var(--panel);border:1px solid var(--line)}
+.vbtns button.on{background:var(--cyan);color:#030805;border-color:transparent}
+.vpanel{min-height:260px}
+.vpanel h4{font-family:var(--display);font-size:22px;margin-bottom:6px}
+.vpanel>p{color:var(--muted);margin-bottom:12px}
+.vpanel ol{list-style:none;position:relative;padding-left:22px}
+.vpanel ol::before{content:"";position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:linear-gradient(var(--cyan),var(--pink))}
+.vpanel li{position:relative;margin-bottom:10px;font-size:15px;animation:fade .4s backwards}
+.vpanel li::before{content:"";position:absolute;left:-21px;top:7px;width:10px;height:10px;border-radius:2px;transform:rotate(45deg);background:var(--pink);box-shadow:var(--glow-pink)}
+.vpanel li small{display:block;color:var(--dim);font-size:13px}
+.roots{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:24px;padding:14px;border-radius:14px;background:linear-gradient(90deg,rgba(61,255,46,.1),rgba(77,177,255,.1));border:1px solid var(--line)}
+.roots b{font-family:var(--display);margin-right:6px}
+.roots span{font-size:14px;padding:5px 11px;border-radius:999px;background:var(--bg);border:1px solid var(--line);color:var(--muted)}
+/* ai flow */
+.aiflow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;position:relative}
+.ai{padding:14px;border-radius:14px;background:var(--panel);border:1px solid var(--line);transition:.35s;position:relative}
+.ai b{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;border:2px solid var(--cyan);color:var(--cyan);font-family:var(--display)}
+.ai h5{font-family:var(--display);font-size:16px;margin:8px 0 4px}
+.ai p{color:var(--muted);font-size:13.5px}
+.ai.on{border-color:var(--pink);box-shadow:var(--glow-pink);transform:translateY(-4px);background:var(--panel2)}
+.ai.on b{background:var(--pink);color:#031005;border-color:var(--pink)}
+@media (max-width:860px){.aiflow{grid-template-columns:1fr 1fr}}
+@media (max-width:480px){.aiflow{grid-template-columns:1fr}}
+.pbtn{font-family:var(--display);font-weight:700;font-size:15px;padding:11px 18px;border-radius:12px;background:linear-gradient(135deg,var(--pink),#1fc21a);color:#031005;box-shadow:var(--glow-pink);transition:transform .15s}
+.pbtn:active{transform:scale(.96)}
+.pbtn:disabled{opacity:.5}
+/* ataques */
+.attack{text-align:center}
+.anum{font-family:"Orbitron",var(--display);font-weight:900;font-size:clamp(40px,8vw,64px);color:#ff5f57;text-shadow:0 0 20px rgba(255,95,87,.6)}
+.asub{font-family:var(--display);color:var(--muted);margin-bottom:12px}
+.asub small{display:block;color:var(--dim);font-size:12px}
+.abar{height:10px;border-radius:6px;background:var(--bg);border:1px solid var(--line);overflow:hidden;margin-bottom:14px}
+.abar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--sun),#ff5f57)}
+/* programas */
+.pcar{position:relative}
+.prog{flex:0 0 auto;width:min(330px,84vw);scroll-snap-align:start;border-radius:18px;padding:20px;background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-top:4px solid var(--c,var(--cyan));display:flex;flex-direction:column;gap:8px}
+.prog .ic{font-size:34px}
+.prog h5{font-family:var(--display);font-size:20px;line-height:1.2}
+.prog .dir{font-size:13px;color:var(--c,var(--cyan));font-family:var(--display);font-weight:600}
+.prog p{color:var(--muted);font-size:14px}
+.prog .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+.prog .tags span{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--ink)}
+/* cadena */
+.chain{list-style:none;counter-reset:c}
+.chain li{counter-increment:c;position:relative;padding:10px 14px 10px 50px;margin-bottom:8px;border-radius:12px;background:var(--panel);border:1px solid var(--line);font-family:var(--display);font-weight:600;transition:.3s}
+.chain li::before{content:counter(c);position:absolute;left:12px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--dim);color:var(--dim);font-size:13px}
+.chain li.on{border-color:var(--pink);box-shadow:var(--glow-pink);transform:translateX(6px)}
+.chain li.on::before{background:var(--pink);border-color:var(--pink);color:#031005}
+/* feynman */
+.fsteps{counter-reset:f;list-style:none}
+.fsteps li{counter-increment:f;padding:8px 0 8px 40px;position:relative;color:var(--ink)}
+.fsteps li::before{content:counter(f);position:absolute;left:0;top:6px;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:var(--panel2);border:1px solid var(--cyan);color:var(--cyan);font-family:var(--display);font-weight:700}
+.fsel{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.fsel button{font-family:var(--display);font-size:13px;font-weight:600;padding:7px 12px;border-radius:999px;background:var(--bg);border:1px solid var(--line)}
+.fsel button.on{background:var(--cyan);color:#030805}
+.fswitch{display:flex;border-radius:12px;overflow:hidden;border:1px solid var(--line);margin-bottom:12px}
+.fswitch button{flex:1;padding:10px;font-family:var(--display);font-weight:700;background:var(--bg)}
+.fswitch button[aria-pressed=true]{background:linear-gradient(135deg,var(--pink),#1fc21a);color:#031005}
+.ftext{font-size:16px;min-height:96px;animation:fade .4s}
+/* curva */
+#curve{width:100%;display:block}
+#curve text{font-family:var(--display);font-size:12px;fill:var(--dim)}
+#curve .ax{stroke:var(--line)}
+#curve .c0{fill:none;stroke:#ff5f57;stroke-width:3}
+#curve .c1{fill:none;stroke:var(--pink);stroke-width:3;filter:drop-shadow(0 0 5px rgba(61,255,46,.7))}
+#curve .dot{fill:var(--cyan)}
+.cbtns{display:flex;gap:8px;justify-content:center;margin-top:8px}
+.cbtns button{font-family:var(--display);font-weight:700;font-size:14px;padding:9px 14px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)}
+.cbtns button.on{background:var(--cyan);color:#030805}
+.rcard{flex:0 0 auto;width:min(250px,76vw);scroll-snap-align:start;padding:16px;border-radius:16px;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--c)}
+.rcard .yr{font-family:"Orbitron",var(--display);font-weight:900;font-size:24px;color:var(--c)}
+.rcard .kind{font-size:11px;font-family:var(--display);font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--c)}
+.rcard h5{font-family:var(--display);font-size:17px;margin:4px 0}
+.rcard p{font-size:14px;color:var(--muted)}
+/* leitner */
+.leit{max-width:620px;margin:auto;text-align:center}
+.boxes{display:flex;gap:10px;justify-content:center;margin-bottom:16px}
+.boxes div{flex:1;max-width:150px;padding:10px;border-radius:12px;background:var(--panel);border:1px solid var(--line);font-family:var(--display)}
+.boxes div.cur{border-color:var(--cyan);box-shadow:var(--glow-cyan)}
+.boxes b{display:block;font-size:26px;color:var(--cyan)}
+.boxes small{display:block;color:var(--dim);font-size:12px}
+.lcard{perspective:1000px;height:200px;cursor:pointer;outline:none}
+.lcard .lin{position:relative;height:100%;transition:transform .6s;transform-style:preserve-3d}
+.lcard.on .lin{transform:rotateY(180deg)}
+.lf,.lb{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;display:grid;place-items:center;padding:20px;font-family:var(--display);font-size:clamp(17px,2.6vw,22px);font-weight:600}
+.lf{background:linear-gradient(160deg,var(--panel2),var(--bg2));border:2px solid var(--cyan);box-shadow:var(--glow-cyan)}
+.lb{transform:rotateY(180deg);background:linear-gradient(160deg,#0f3a1a,var(--panel));border:2px solid var(--pink);box-shadow:var(--glow-pink)}
+.lf small,.lb small{display:block;font-size:12px;color:var(--dim);margin-top:8px;font-weight:500}
+.lact{display:flex;gap:10px;justify-content:center;margin-top:14px}
+.lact button{font-family:var(--display);font-weight:700;padding:11px 20px;border-radius:12px;border:1px solid var(--line);background:var(--panel)}
+#lYes{background:linear-gradient(135deg,var(--pink),#1fc21a);color:#031005}
+#lNo:hover{border-color:#ff5f57;color:#ff5f57}
+.lact button:disabled{opacity:.35;cursor:not-allowed}
+.lmsg{margin-top:10px;font-family:var(--display);color:var(--sun);min-height:1.5em}
+
+/* ---------- CRÉDITOS ---------- */
+.credits{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.credits div{padding:14px 16px;border-radius:14px;background:var(--panel);border:1px solid var(--line);font-size:14px;color:var(--muted)}
+.credits b{color:var(--ink);font-family:var(--display);display:block;font-size:15px}
+footer{padding:50px 0 120px;text-align:center;color:var(--dim);font-size:14px;border-top:1px solid var(--line);margin-top:60px}
+footer b{color:var(--ink)}
+
+/* ---------- REPRODUCTOR DE MÚSICA (cassette) ---------- */
+#player{position:fixed;right:16px;bottom:16px;z-index:70;display:flex;align-items:center;gap:12px;padding:10px 14px 10px 10px;border-radius:18px;background:rgba(6,19,10,.92);border:1px solid rgba(61,255,46,.5);box-shadow:var(--glow-pink);backdrop-filter:blur(8px);max-width:calc(100% - 32px)}
+#player .pp{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--pink),var(--violet));display:grid;place-items:center;font-size:18px;flex:none;box-shadow:var(--glow-pink);color:#031005}
+#player .tape{display:flex;gap:6px;flex:none}
+#player .tape i{width:16px;height:16px;border-radius:50%;border:3px dotted var(--cyan)}
+#player.playing .tape i{animation:spin 1.6s linear infinite}
+#player .meta{font-size:12px;line-height:1.35;min-width:0}
+#player .meta b{display:block;font-family:var(--display);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#player .meta span{color:var(--muted);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px}
+#player input{width:70px;accent-color:var(--pink)}
+@media (max-width:520px){#player input,#player .tape,#player .meta span{display:none}#player{padding:6px 12px 6px 6px;gap:8px}#player .pp{width:38px;height:38px}#player .meta b{font-size:12px;max-width:120px}}
+
+/* ---------- MODALES ---------- */
+.modal{position:fixed;inset:0;z-index:90;background:rgba(1,4,2,.94);display:none;align-items:center;justify-content:center;padding:16px}
+.modal.on{display:flex;animation:fade .3s}
+.modal .x{position:absolute;top:14px;right:16px;width:46px;height:46px;border-radius:50%;font-size:22px;background:rgba(255,255,255,.1);z-index:2}
+.modal .x:hover{background:var(--pink);color:#031005}
+#lb img{max-width:100%;max-height:82vh;border-radius:12px;box-shadow:0 0 50px rgba(61,255,46,.25)}
+#lb figure{text-align:center}
+#lb figcaption{margin-top:12px;font-family:var(--display);font-size:17px}
+#lb figcaption small{display:block;color:var(--dim);font-size:13px}
+#lb .nav{position:absolute;top:50%;transform:translateY(-50%);width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.1);font-size:24px}
+#lb .nav:hover{background:var(--pink);color:#031005}
+#lb .pv{left:14px}#lb .nx{right:14px}
+#vm .box{width:min(960px,100%);text-align:center}
+#vm video{width:100%;max-height:78vh;border-radius:14px;background:#000}
+#vm h4{font-family:var(--display);font-size:20px;margin-top:12px}
+#vm p{color:var(--muted);font-size:14px}
+
+/* toast nivel completo */
+#toast{position:fixed;left:50%;top:84px;transform:translate(-50%,-30px);opacity:0;z-index:80;font-family:var(--display);font-weight:700;font-size:clamp(20px,4vw,34px);padding:14px 28px;border-radius:16px;border:3px solid #fff;background:#031005;color:var(--pink);box-shadow:0 0 30px rgba(61,255,46,.7);transition:.5s;pointer-events:none;text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#toast small{display:block;font-size:14px}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .reveal{opacity:1;transform:none}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== PANTALLA DE INICIO ===================== -->
+<div id="start" role="dialog" aria-label="Pantalla de inicio">
+  <div class="start-box">
+    <h1>Juan Sebastián Lozano Calderón</h1>
+    <p>Iniciando secuencia de ADN alienígena…</p>
+    <div class="load" aria-hidden="true"><span id="loadbar"></span></div>
+    <div class="load-pct" id="loadpct" >0%</div>
+    <button class="btn-start" id="btnStart">⏻ ACTIVAR</button>
+    <button class="start-skip" id="btnSilent">Entrar sin música</button>
+  </div>
+</div>
+
+<div id="lvl" aria-hidden="true"><i></i></div>
+
+<nav class="top" id="nav">
+  <div class="wrap">
+    <a class="brand" href="#inicio"><b>◉</b><span>JUAN SEBASTIAN LOZANO CALDERON</span></a>
+    <div class="links" id="links">
+      <a href="#yo">Yo</a>
+      <a href="#camino">Mi camino</a>
+      <a href="#inspiracion">Inspiración</a>
+      <a href="#universidad">Universidad</a>
+      <a href="#arsenal">Arsenal</a>
+      <a href="#sinergia">Sinergia</a>
+      <a href="#aprendo">Cómo aprendo</a>
+      <a href="#creditos">Créditos</a>
+    </div>
+    <div class="lvl-pct" id="lvlpct">0%</div>
+  </div>
+</nav>
+
+<!-- ===================== 1.HERO ===================== -->
+<header class="hero" id="inicio">
+  <canvas id="sky" aria-hidden="true"></canvas>
+  <div class="dial" aria-hidden="true"><i class="r1"></i><i class="r2"></i><i class="r3"></i><span class="gem"></span></div>
+  <div class="grid" aria-hidden="true"></div>
+  <div class="hero-in">
+    <div class="kicker">FUERZA ALIENÍGENA · MODO HÉROE ACTIVADO</div>
+    <h1>Juan<br>Lozano C.</h1>
+    <div class="typed" id="typed" aria-live="polite"></div>
+    <dl class="badge">
+      <dt>Grupo</dt><dd>Juan Sebastián Lozano Calderón</dd>
+      <dt>Fecha</dt><dd>11 de octubre de 2026</dd>
+      <dt>Curso</dt><dd>Taller 3 · Servidor web Apache en AWS EC2</dd>
+      <dt>Docente</dt><dd>Ing. Andrés Torres</dd>
+      <dt>Servidor</dt><dd>Apache HTTP Server · Amazon EC2</dd>
+    </dl>
+  </div>
+  <div class="scroll-hint">▼ INICIA LA MISIÓN</div>
+</header>
+
+<main>
+
+<!-- ===================== 02 YO ===================== -->
+<section id="yo">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-num">MISIÓN 02</div>
+      <h2>YO</h2>
+      <p>Juan Sebastián Lozano Calderón. Estudiante de Ingeniería de Sistemas y Computación en la Universidad Católica de Colombia. Toca cualquier foto para verla en grande.</p>
+      <p><b>La Familia es un pilar fundamental a lo largo de la vida, a pesar de las circunstancias siempre su apoyo incondicional y los consejos que nos brindan para mejorar y ser mejor persona en todos los ámbitos de la vida, vale más que cualquier diamante, oro, plata, etc. No tiene precio, es imposible de calcular (incalculable)</b></p>
+    </div>
+    <div class="carousel wide reveal" data-c="yo"></div>
+  </div>
+</section>
+
+<!-- ===================== 03 MI CAMINO ===================== -->
+<section id="camino">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-num">MISIÓN 03</div>
+      <h2>Mi recorrido académico</h2>
+      <p>Cada etapa es un nivel. Algunos tuvieron pausas (checkpoints), pero ninguno quedó sin terminar.</p>
+    </div>
+    <div class="two">
+      <div class="timeline">
+        <div class="tl reveal">
+          <div class="yr">2010 – 2019</div>
+          <h4>Instituto San Juan de Dios</h4>
+          <p>Actualmente Colegio Bilingüe.</p>
+          <div class="thumb" style="grid-template-columns:1fr"><img src="parte1/img/estudios/colegio-san-juan-de-dios.jpg" alt="Instituto San Juan de Dios" loading="lazy" data-single="estudios/colegio-san-juan-de-dios.jpg|Instituto San Juan de Dios"></div>
+        </div>
+        <div class="tl reveal">
+          <div class="yr">2020 – 2021</div>
+          <h4>Colegio Técnico Aldemar Rojas Plazas</h4>
+          <p>Me gradué de Técnico en Diseño y Desarrollo de Software.</p>
+          <div class="thumb" style="grid-template-columns:1fr"><img src="parte1/img/estudios/colegio-aldemar-rojas-plazas.jpg" alt="Colegio Técnico Aldemar Rojas Plazas" loading="lazy" data-single="estudios/colegio-aldemar-rojas-plazas.jpg|Colegio Técnico Aldemar Rojas Plazas"></div>
+        </div>
+        <div class="tl reveal">
+          <div class="yr">2022-1</div>
+          <h4>Ingeniería de Sistemas y Computación</h4>
+          <p>Comencé en la generación 2022-1 en la Universidad Católica de Colombia.</p>
+        </div>
+        <div class="tl reveal">
+          <div class="yr">2024-1</div>
+          <h4>Estructuras de Datos</h4>
+          <p>Listas, pilas, colas y punteros en C++. En abril de 2025 lo repasé por mi cuenta. <a href="#listas">Ver mi código de listas enlazadas Hector Jaimes 2024-1 ↓</a></p>
+        </div>
+        <div class="tl pause reveal">
+          <div class="yr">CHECKPOINTS · 2023-1 · 2023-3 · 2025-1</div>
+          <h4>Pausas en el camino</h4>
+          <p>No fueron impedimento. Dios mediante, con mucha disciplina, resiliencia y esfuerzo, que con el tiempo han construido talento.</p>
+        </div>
+        <div class="tl reveal">
+          <div class="yr">2025-3</div>
+          <h4>Desarrollo de software</h4>
+          <p>Git, GitHub, ramas y endpoints con FastAPI junto al Ing. Sergio Galvis Motoa. <a href="#arsenal">Ver mi arsenal ↓</a></p>
+        </div>
+        <div class="tl reveal">
+          <div class="yr">2026-2 · INTERSEMESTRAL</div>
+          <h4>Redes Computacionales</h4>
+          <p>Con el Ing. Andrés Torres, la puerta a Administración de Redes.</p>
+        </div>
+        <div class="tl reveal">
+          <div class="yr">2026-3 · HOY</div>
+          <h4>Cursando el periodo 2026-3</h4>
+          <p>Desplegando esta página en un servidor Apache sobre AWS EC2.</p>
+        </div>
+        <div class="tl future reveal">
+          <div class="yr">2027 · META</div>
+          <h4>Ingeniero de Sistemas y Computación</h4>
+          <p>Y después: especialización en Ciberseguridad.</p>
+        </div>
+      </div>
+      <div class="reveal">
+        <div class="hub" id="hub">
+          <div class="ring"></div>
+          <div class="core">CIBER­SEGURIDAD<br><small style="color:var(--muted);font-weight:500">mi especialización a futuro</small></div>
+        </div>
+        <p style="text-align:center;color:var(--muted);margin-top:14px;font-size:15px">Ciberseguridad engloba entender todas las fases: el ciclo de desarrollo de software, IA/Machine Learning, la nube y las redes e infraestructura de TI.</p>
+      </div>
+    </div>
+    <div class="quote reveal">Caerse 7 veces y <em>levantarse 8.</em></div>
+  </div>
+</section>
+
+<!-- ===================== 04 INSPIRACIÓN ===================== -->
+<section id="inspiracion">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-num">MISIÓN 04</div>
+      <h2>¿Cómo empezó todo?</h2>
+      <p>La inspiración de la ingeniería llegó por las series y los juegos: Ben 10, Max Steel, Generator Rex, Spider-Man, Mr. Robot, Geometry Dash… Pasa el mouse por un video para ver un adelanto y haz clic para verlo completo.</p>
+    </div>
+
+    <h3 class="reveal">Inspiración de la ingeniería</h3>
+    <div class="vgrid reveal" data-v="inspiracion"></div>
+
+    <div class="two" style="margin-top:28px">
+      <figure class="slide reveal" style="width:100%;margin:0" data-single="yo/spiderman-nino.jpg|De niño ya era Spider-Man">
+        <img src="parte1/img/yo/spiderman-nino.jpg" alt="Juan de niño disfrazado de Spider-Man" loading="lazy" style="height:420px;object-position:top">
+        <figcaption>De niño ya era Spider-Man</figcaption>
+      </figure>
+      <figure class="slide reveal" style="width:100%;margin:0" data-single="yo/mr-robot-moment.jpg|Mr. Robot moment!">
+        <span class="tag">MR. ROBOT MOMENT!</span>
+        <img src="parte1/img/yo/mr-robot-moment.jpg" alt="Juan con capucha, momento Mr. Robot" loading="lazy" style="height:420px">
+        <figcaption>Mr. Robot moment!</figcaption>
+      </figure>
+    </div>
+
+    <h3 class="reveal">Series favoritas de la infancia</h3>
+    <div class="vgrid reveal" data-v="infancia"></div>
+
+    <h3 class="reveal">Familiares que me inspiraron curiosidad por las computadoras</h3>
+    <div class="people reveal">
+      <div class="card person"><div class="role">Primo - Ingeniero de sistemas y computación y experto en Ciencias de la Computación</div></div>
+      <div class="card person"><div class="role">Hermano - Ingeniero Mecatrónico </div></div>
+    </div>
+
+    <h3 class="reveal">Lo que aprendí por curiosidad</h3>
+    <div class="two">
+      <div class="term reveal">
+        <div class="bar"><i></i><i></i><i></i><span>juan@curiosidad: ~</span></div>
+        <pre id="term" aria-live="polite"></pre>
+      </div>
+      <div class="reveal">
+        <p style="color:var(--muted)">Temas que al principio me agotaban mucho, pero la curiosidad y la disciplina/resiliencia durante este largo juego/trayecto llamado vida son las que me han llevado hasta donde me encuentro hoy.</p>
+        <div class="imgrow">
+          <img src="parte1/img/estudios/nero.jpg" alt="Nero Burning ROM" loading="lazy" data-single="estudios/nero.jpg|Nero Burning ROM: quemar imágenes ISO" style="object-fit:contain">
+          <img src="parte1/img/estudios/usb-booteable.jpg" alt="USB booteable" loading="lazy" data-single="estudios/usb-booteable.jpg|USB booteable con Rufus">
+          <img src="parte1/img/estudios/cuadruple-boot.jpg" alt="Instalación cuádruple boot" loading="lazy" data-single="estudios/cuadruple-boot.jpg|Instalación cuádruple boot">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 05 UNIVERSIDAD ===================== -->
+<section id="universidad">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-num">MISIÓN 05</div>
+      <h2>Universidad Católica de Colombia</h2>
+      <p>2022 – 2027 · Ingeniería de Sistemas y Computación. Gracias a los docentes, secretario y decano con quienes he compartido clases y que me han apoyado en el camino.</p>
+    </div>
+    <div class="carousel wide reveal" data-c="universidad"></div>
+
+
+    <h3 class="reveal" id="listas">Estructuras de Datos · Listas enlazadas en C++</h3>
+    <p class="ll-intro reveal">Vi Estructuras de Datos en el periodo 2024-1. En abril de 2025 volví por mi cuenta a repasar listas enlazadas simples y escribí este programa: crea la lista, inserta al final, busca un valor y elimina nodos (al inicio o en medio). A la derecha puedes jugar con la misma lógica: cada botón ejecuta la función equivalente y la resalta en el código.</p>
+    <div class="ll-meta reveal"><span>C++</span><span>Punteros</span><span>Memoria dinámica (new / delete)</span><span>2024-1 · Repaso abril 2025</span></div>
+    <div class="two">
+      <div class="term code reveal">
+        <div class="bar"><i></i><i></i><i></i><span>listas_enlazadas.cpp</span><button id="llCopy">Copiar</button></div>
+        <pre id="llCode">#include&lt;iostream&gt;
+<span class="kw">using</span> <span class="kw">namespace</span> std;
+
+<span class="kw">struct</span> Nodo{
+    <span class="kw">int</span> dato;
+    Nodo* sig;
+};
+
+<span class="cfn" data-fn="crearLista"><span class="kw">void</span> crearLista(Nodo*&amp; cab, <span class="kw">int</span> d){
+    Nodo* nuevo = <span class="kw">new</span> Nodo;
+    nuevo-&gt;dato = d;
+    nuevo-&gt;sig = <span class="kw">NULL</span>;
+    cab = nuevo;
+}
+</span>
+<span class="cfn" data-fn="insertarFinal"><span class="kw">void</span> insertarFinal(Nodo* cab, <span class="kw">int</span> d){
+    Nodo* aux = cab;
+    Nodo* nuevo = <span class="kw">new</span> Nodo;
+    nuevo-&gt;dato = d;
+    
+    <span class="kw">while</span>(aux-&gt;sig != <span class="kw">NULL</span>){
+        aux = aux-&gt;sig;
+    }
+    
+    aux-&gt;sig = nuevo;
+    nuevo-&gt;sig = <span class="kw">NULL</span>;
+    
+}
+</span>
+<span class="cfn" data-fn="mostrarLista"><span class="kw">void</span> mostrarLista(Nodo* cab){
+    Nodo* aux = cab;
+    <span class="kw">while</span>(aux != <span class="kw">NULL</span>){
+        cout&lt;&lt;aux-&gt;dato&lt;&lt;<span class="st">&quot; -&gt; &quot;</span>;
+        aux = aux-&gt;sig;
+    }
+    
+}
+</span>
+<span class="cfn" data-fn="buscarNodo">Nodo* buscarNodo(Nodo*cab, <span class="kw">int</span> d){
+    Nodo* aux = cab;
+    <span class="kw">while</span>(aux != <span class="kw">NULL</span>){
+        <span class="kw">if</span>(aux-&gt;dato == d){
+            <span class="kw">return</span> aux;
+        }
+        
+        aux = aux-&gt;sig;
+    }
+    
+    <span class="kw">return</span> <span class="kw">NULL</span>;
+}
+</span>
+<span class="cfn" data-fn="eliminarInicio"><span class="kw">void</span> eliminarInicio(Nodo*&amp; cab){
+    Nodo* aux = cab;
+    cab = cab-&gt;sig;
+    <span class="kw">delete</span> aux;
+}
+</span>
+<span class="cfn" data-fn="eliminarMedio"><span class="kw">void</span> eliminarMedio(Nodo* cab, Nodo* elim){
+    Nodo* aux = cab;
+    <span class="kw">while</span>(aux-&gt;sig != elim){
+        aux = aux-&gt;sig;
+    }
+    
+    aux-&gt;sig = elim-&gt;sig;
+    <span class="kw">delete</span> elim;
+}
+</span>
+<span class="kw">int</span> main(){
+    Nodo* cab = <span class="kw">NULL</span>; Nodo* buscar = <span class="kw">NULL</span>;
+    <span class="kw">int</span> dato, N;
+    
+    cout&lt;&lt;<span class="st">&quot;Digite la cantidad de datos que desea: &quot;</span>;
+    cin &gt;&gt; N;
+    
+    <span class="kw">for</span>(<span class="kw">int</span> i = 1; i &lt;= N; i++){
+        cout&lt;&lt;<span class="st">&quot;Digite el dato &quot;</span>&lt;&lt;i&lt;&lt;<span class="st">&quot; : &quot;</span>;
+        cin &gt;&gt; dato;
+        <span class="kw">if</span>(cab == <span class="kw">NULL</span>){
+            crearLista(cab,dato);
+        }<span class="kw">else</span>{
+            insertarFinal(cab,dato);
+        }
+    }
+    
+    mostrarLista(cab);
+    <span class="kw">int</span> opc = 1;
+    <span class="kw">while</span>(opc == 1){
+        cout&lt;&lt;endl&lt;&lt;<span class="st">&quot;Digite un valor para verificar si existe: &quot;</span>;
+        cin &gt;&gt; dato;
+        buscar = buscarNodo(cab,dato);
+        <span class="kw">if</span>(buscar != <span class="kw">NULL</span>){
+            cout&lt;&lt;<span class="st">&quot;El dato existe&quot;</span>;
+        }<span class="kw">else</span>{
+            cout&lt;&lt;<span class="st">&quot;El dato no existe&quot;</span>;
+        }
+        
+        cout&lt;&lt;<span class="st">&quot;\nDesea continuar? 1. Si 2. No &quot;</span>;
+        cin &gt;&gt; opc;
+    }
+    
+    opc = 1;
+    
+    <span class="kw">while</span>(opc == 1){
+        <span class="kw">do</span>{
+            cout&lt;&lt;endl&lt;&lt;<span class="st">&quot;Digite un valor para eliminar: &quot;</span>;
+            cin &gt;&gt; dato;
+            buscar = buscarNodo(cab,dato);
+            <span class="kw">if</span>(buscar != <span class="kw">NULL</span>){
+                cout&lt;&lt;<span class="st">&quot;El dato existe en la lista&quot;</span>;
+            }<span class="kw">else</span>{
+                cout&lt;&lt;<span class="st">&quot;El dato no existe&quot;</span>;
+            }
+        }<span class="kw">while</span>(buscar == <span class="kw">NULL</span>);
+        
+        <span class="kw">if</span>(buscar == cab){
+            eliminarInicio(cab);
+        }<span class="kw">else</span>{
+            eliminarMedio(cab,buscar);
+        }
+        
+        cout&lt;&lt;endl&lt;&lt;<span class="st">&quot;Lista modificada...&quot;</span>&lt;&lt;endl;
+        mostrarLista(cab);
+        cout&lt;&lt;<span class="st">&quot;\nDesea continuar? 1. Si 2. No &quot;</span>;
+        cin &gt;&gt; opc;
+    }
+    
+    cout&lt;&lt;<span class="st">&quot;Mision cumplida :D&quot;</span>&lt;&lt;endl;
+    
+}</pre>
+      </div>
+      <div class="card sim reveal">
+        <h4>Simulador de la lista</h4>
+        <p>Escribe un número y elige una operación. El nodo rosado es la cabeza (<code>cab</code>); el amarillo es <code>aux</code> recorriendo la lista.</p>
+        <div class="sim-ctrl">
+          <input id="llVal" type="number" placeholder="Dato" aria-label="Dato">
+          <button class="go" data-op="insertar">+ Insertar al final</button>
+          <button data-op="buscar">Buscar</button>
+          <button data-op="eliminar">Eliminar</button>
+          <button data-op="reset">Reiniciar</button>
+        </div>
+        <div class="ll" id="ll" aria-live="polite"></div>
+        <div class="term"><div class="bar"><i></i><i></i><i></i><span>salida del programa</span></div><pre id="llOut"></pre></div>
+      </div>
+    </div>
+    <div class="ll-learn reveal">
+      <div><b>Punteros y referencias</b><code>Nodo*&amp; cab</code> permite que la función cambie la cabeza real, no una copia.</div>
+      <div><b>Recorrido con aux</b>Avanzar nodo por nodo con <code>aux = aux-&gt;sig</code> hasta llegar a <code>NULL</code>.</div>
+      <div><b>Memoria dinámica</b>Cada <code>new</code> reserva un nodo y cada <code>delete</code> lo libera al eliminarlo.</div>
+      <div><b>Casos especiales</b>Eliminar la cabeza no es igual que eliminar en medio: por eso hay dos funciones.</div>
+    </div>
+
+    <h3 class="reveal">Docentes que han hecho parte de mi camino</h3>
+    <div class="teach-tools reveal">
+      <input id="tq" type="search" placeholder="Buscar un docente…" aria-label="Buscar docente">
+      <button id="tspot">🎲 Docente al azar</button>
+    </div>
+    <div class="cloud reveal" id="cloud"></div>
+    <div class="spot" id="spot" aria-live="polite"></div>
+  </div>
+</section>
+
+
+<!-- ===================== 06 ARSENAL ===================== -->
+<section id="arsenal">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-num">MISIÓN 06</div>
+      <h2>Mi arsenal de ingeniero</h2>
+      <p>Las herramientas que fui desbloqueando con mis docentes. Elige una pestaña: cada una es un mini-laboratorio que puedes tocar.</p>
+    </div>
+
+    <div class="tabs4 reveal" role="tablist" aria-label="Herramientas">
+      <button role="tab" aria-selected="true" data-tab="git">⎇ Git &amp; GitHub</button>
+      <button role="tab" aria-selected="false" data-tab="api">⚡ FastAPI</button>
+      <button role="tab" aria-selected="false" data-tab="arq">🏛 Arquitectura</button>
+      <button role="tab" aria-selected="false" data-tab="port">★ Portafolio</button>
+    </div>
+
+    <!-- ---- GIT ---- -->
+    <div class="tpanel on" id="tp-git" role="tabpanel">
+      <p class="lead2"><b>Desarrollo de software · Ing. Sergio Galvis Motoa · 2025-3.</b> Aquí vi control de versiones con Git, ramas (branches) y cómo subir proyectos a GitHub. Es la parte que más quiero reforzar, así que construí este simulador para practicar: toca los comandos en orden. El que brilla es el siguiente sugerido. + Santos Triana Sistemas Operarivos 2026-1</p>
+      <div class="two">
+        <div>
+          <div class="term">
+            <div class="bar"><i></i><i></i><i></i><span>juan@portafolio: ~/portafolio</span></div>
+            <pre id="gitOut" aria-live="polite"></pre>
+          </div>
+          <div class="gcmds" id="gitCmds"></div>
+        </div>
+        <div>
+          <div class="card gview">
+            <div class="ghead"><b>Historial del repositorio</b><span id="gitCloud" class="gcloud">☁ GitHub: sin conectar</span></div>
+            <div class="gsvg"><svg id="gitSvg" height="120" aria-label="Gráfico de commits"></svg></div>
+            <div class="gexp" id="gitExp"><b>En palabras simples</b><span>Empieza con <code>git init</code>: convierte tu carpeta en un repositorio que recuerda cada cambio.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- FASTAPI ---- -->
+    <div class="tpanel" id="tp-api" role="tabpanel">
+      <p class="lead2"><b>Endpoints con FastAPI.</b> FastAPI es un framework de Python creado por el colombiano <b>Sebastián Ramírez</b>, conocido en línea como <b>tiangolo</b>. Con él creé endpoints que devuelven datos (JSON) y páginas completas con <code>HTMLResponse</code>, usando HTML y CSS para que el sitio sea más estiloso, animado y dinámico. Prueba las peticiones:</p>
+      <div class="two">
+        <div class="term code">
+          <div class="bar"><i></i><i></i><i></i><span>main.py</span></div>
+<pre><span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI
+<span class="kw">from</span> fastapi.responses <span class="kw">import</span> HTMLResponse
+
+app = FastAPI()
+
+<span class="cfn" data-ep="/api/saludo"><span class="st">@app.get("/api/saludo")</span>
+<span class="kw">def</span> saludo():
+    <span class="kw">return</span> {<span class="st">"mensaje"</span>: <span class="st">"Hola, soy Juan"</span>}
+</span>
+<span class="cfn" data-ep="/"><span class="st">@app.get("/", response_class=HTMLResponse)</span>
+<span class="kw">def</span> inicio():
+    <span class="kw">return</span> <span class="st">"&lt;h1&gt;Hola, soy Juan&lt;/h1&gt;"</span>
+</span>
+<span class="cfn" data-ep="/docs"><span class="dimc"># /docs lo genera FastAPI solo (Swagger UI)</span></span></pre>
+        </div>
+        <div class="browser">
+          <div class="bbar"><i></i><i></i><i></i><span class="burl" id="apiUrl">http://127.0.0.1:8000</span></div>
+          <div class="breqs">
+            <button data-ep="/api/saludo">GET /api/saludo</button>
+            <button data-ep="/">GET /</button>
+            <button data-ep="/docs">GET /docs</button>
+          </div>
+          <div class="bview" id="apiView"><p class="dimc">Elige una petición para ver la respuesta del servidor.</p></div>
+        </div>
+      </div>
+      <h4 class="mini">La usabilidad: un atributo de calidad que esta página intenta cumplir</h4>
+      <p class="lead2">La usabilidad mide qué tan fácil, eficiente y agradable es usar un sistema (es uno de los atributos de calidad de la norma ISO/IEC 25010). Toca cada tarjeta para ver cómo se aplica aquí mismo:</p>
+      <div class="flips" id="usaFlips"></div>
+    </div>
+
+    <!-- ---- ARQUITECTURA ---- -->
+    <div class="tpanel" id="tp-arq" role="tabpanel">
+      <p class="lead2"><b>Arquitectura de Software · Ing. Sergio Arturo Piñeros · 2026-3 (cursándola).</b> Aprendí qué hace un arquitecto de software, sus <i>power skills</i> y los atributos de calidad. Todo empieza levantando la información correcta. Toca cada etapa:</p>
+      <div class="bridge" id="bridge">
+        <button class="bstep" data-s="0"><span>1</span>Elicitación</button>
+        <button class="bstep" data-s="1"><span>2</span>Análisis</button>
+        <button class="bstep arch" data-s="2"><span>3</span>Arquitectura</button>
+        <button class="bstep" data-s="3"><span>4</span>Diseño</button>
+      </div>
+      <div class="bdeck"><svg viewBox="0 0 600 70" aria-hidden="true" preserveAspectRatio="none"><path id="bridgeArc" d="M10 60 Q300 -10 590 60" /><line x1="10" y1="60" x2="590" y2="60" /></svg><span class="bl">Requerimientos</span><span class="br">Diseño</span></div>
+      <div class="bexp card" id="bexp"></div>
+      <div class="two" style="margin-top:22px">
+        <div>
+          <h4 class="mini">Atributos de calidad</h4>
+          <div class="qgrid" id="qgrid"></div>
+          <div class="qinfo" id="qinfo">Toca un atributo para ver qué significa.</div>
+        </div>
+        <div>
+          <h4 class="mini">Power skills del arquitecto</h4>
+          <div class="skills" id="skills"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- PORTAFOLIO ---- -->
+    <div class="tpanel" id="tp-port" role="tabpanel">
+      <p class="lead2"><b>Cómo pensar un excelente portafolio.</b> Lo aprendí con el Ing. Sergio Galvis Motoa y lo reforzaron en CONIITI <b>Julián González</b> (Blen360, parte de Women In Tech Colombia) y la Ing. <b>Solangie Garavito</b>, docente de la Universidad Católica de Colombia. Desliza las reglas y marca las que ya cumples:</p>
+      <div class="ptrack" id="ptrack"></div>
+      <div class="pmeter"><div><i id="pbar"></i></div><span id="ptxt">0 / 6 reglas cumplidas</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 07 SINERGIA ===================== -->
+<section id="sinergia">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-num">MISIÓN 07</div>
+      <h2>Todo se conecta</h2>
+      <p>Desde las bases (Fundamentación Matemática, Algoritmia y Programación, Pensamiento Sistémico) todas las materias hacen sinergia: se cruzan como en un diagrama de Venn y juntas nos forman como mejores ingenieros. Toca cada zona del diagrama.</p>
+    </div>
+
+    <div class="two venn-wrap">
+      <div class="reveal">
+        <svg id="venn" viewBox="0 0 400 380" role="img" aria-label="Diagrama de Venn de las tres áreas de Ingeniería de Sistemas">
+          <circle class="vc" data-c="D" cx="145" cy="140" r="112"/>
+          <circle class="vc" data-c="I" cx="255" cy="140" r="112"/>
+          <circle class="vc" data-c="C" cx="200" cy="235" r="112"/>
+          <text x="92" y="105">Desarrollo</text><text x="92" y="121">de software</text>
+          <text x="308" y="105">Infraestructura</text><text x="308" y="121">de TI</text>
+          <text x="200" y="312">Ciencias de la</text><text x="200" y="328">computación</text>
+          <text class="sm" x="200" y="88">Nube</text>
+          <text class="sm" x="132" y="222">IA aplicada</text>
+          <text class="sm" x="268" y="222">Seguridad</text>
+          <text class="core" x="200" y="172">◆</text>
+        </svg>
+        <p class="vcap">Diagrama de Venn (John Venn, 1880). El centro es donde quiero llegar.</p>
+      </div>
+      <div class="reveal">
+        <div class="vbtns" id="vbtns"></div>
+        <div class="card vpanel" id="vpanel"></div>
+      </div>
+    </div>
+
+    <div class="roots reveal">
+      <b>Las raíces (2022-1 en adelante)</b>
+      <span>Fundamentación Matemática · Ing. Giovany Martínez</span>
+      <span>Algoritmia y Programación · Ing. Manuel Báez</span>
+      <span>Pensamiento Sistémico (hoy Innovación y Emprendimiento, nivel 5) · Ing. César González</span>
+    </div>
+
+    <h3 class="reveal">De un problema real a un modelo de IA</h3>
+    <p class="lead2 reveal">La intersección entre <b>Formulación y Evaluación de Proyectos</b> (Ing. Hellen Parra) y <b>Problem Discovery and Solution Design with AI</b> (Ing. Juan Carlos Navarro, 2026-3). Dale play al recorrido:</p>
+    <div class="aiflow reveal" id="aiflow">
+      <div class="ai"><b>1</b><h5>Problem statement</h5><p>Identificar la necesidad real antes de pensar en tecnología.</p></div>
+      <div class="ai"><b>2</b><h5>Datos que lo prueban</h5><p>¿Tenemos suficientes datos para demostrar que el problema existe?</p></div>
+      <div class="ai"><b>3</b><h5>Datos para entrenar</h5><p>¿Y suficientes para alimentar el modelo? Big data: millones de ejemplos.</p></div>
+      <div class="ai"><b>4</b><h5>Tipo de modelo</h5><p>De lenguaje (ChatGPT, Gemini, Claude), generativo o de visión por computador.</p></div>
+      <div class="ai"><b>5</b><h5>Redes neuronales</h5><p>El modelo aprende y reconoce patrones. Los transformers son la base de los modelos de lenguaje actuales.</p></div>
+    </div>
+    <div style="text-align:center;margin-top:14px"><button class="pbtn" id="aiplay">▶ Reproducir recorrido</button></div>
+    <div class="quote reveal" style="font-size:clamp(20px,3vw,30px)">Desarrollar soluciones inteligentes, liderar proyectos innovadores y <em>generar impacto</em> en un mundo impulsado por los datos y la IA.</div>
+
+    <h3 class="reveal">Ciberseguridad explicada fácil</h3>
+    <div class="two">
+      <div class="reveal">
+        <p class="lead2">Con el experto <b>Luis Salazar</b> vi de forma gráfica cómo funciona un exploit, qué es un PLC, un hipervisor y cómo todo eso se simula en un sandbox. <b>Diego Osorio</b> complementó con cifras: los ataques y el phishing ocurren cada pocos minutos.</p>
+        <div class="attack card">
+          <div class="anum" id="atkNum">0</div>
+          <div class="asub">ataques en 10 minutos <small>(dato expuesto en clase: ~10.000)</small></div>
+          <div class="abar"><i id="atkBar"></i></div>
+          <button class="pbtn" id="atkGo">▶ Ver 10 minutos en 10 segundos</button>
+        </div>
+      </div>
+      <div class="flips reveal" id="secFlips"></div>
+    </div>
+
+    <h3 class="reveal">La Facultad de Ingeniería: programas hermanos</h3>
+    <p class="lead2 reveal">Ninguna ingeniería trabaja sola. Desliza para conocer cómo cada programa se cruza con Sistemas:</p>
+    <div class="pcar reveal">
+      <button class="c-btn c-prev" id="pcPrev" aria-label="Anterior">‹</button>
+      <div class="ptrack2" id="progs"></div>
+      <button class="c-btn c-next" id="pcNext" aria-label="Siguiente">›</button>
+    </div>
+
+    <div class="people reveal" style="margin-top:22px">
+      <div class="card person"><div class="role">Decano · Facultad de Ingeniería</div><h4>Jaime Díaz Ortiz</h4></div>
+      <div class="card person"><div class="role">Secretario de la Facultad</div><h4>José Joaquín Prieto Tunjano</h4></div>
+      <div class="card person"><div class="role">Directora del CIFI</div><h4>Claudia Constanza Jiménez Carranza</h4><p>Centro de Investigaciones de la Facultad de Ingeniería.</p></div>
+    </div>
+
+    <h3 class="reveal">Mi sugerencia (PQRS): ¿cómo viaja una idea?</h3>
+    <div class="two">
+      <div class="reveal">
+        <p class="lead2">El futuro es el IoT (internet de las cosas) y los sistemas embebidos, y para eso necesitamos ingenieros electrónicos. Mi sugerencia: hacer una encuesta para saber cuántas personas estarían interesadas en continuar el programa de Ingeniería Electrónica y Telecomunicaciones. Sé que depende de los cupos, de quienes se inscriban y de las decisiones de las directivas, pero todo empieza por una sugerencia.</p>
+        <button class="pbtn" id="chainGo">✉ Enviar sugerencia</button>
+      </div>
+      <ol class="chain reveal" id="chain">
+        <li>Estudiantes (sugerencias)</li><li>Cuerpo docente</li><li>Directores de programa</li><li>Secretaría de Facultad</li><li>Decanatura</li><li>Vicerrectoría</li><li>Rectoría</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 08 CÓMO APRENDO ===================== -->
+<section id="aprendo">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-num">MISIÓN 08</div>
+      <h2>Cómo aprendo (y no olvido)</h2>
+      <p>Poco a poco voy recordando y refrescando lo que vi con tres metodologías de estudio. Pruébalas aquí mismo.</p>
+    </div>
+
+    <h3 class="reveal">1 · La técnica Feynman</h3>
+    <div class="two">
+      <div class="reveal">
+        <p class="lead2"><b>Richard Feynman</b> fue un físico teórico estadounidense, conocido por la formulación de integrales de camino en la mecánica cuántica, la electrodinámica cuántica y la física de la superfluidez del helio líquido. Su lema práctico: si no puedes explicarlo de forma simple, aún no lo entiendes.</p>
+        <ol class="fsteps"><li>Elige un concepto.</li><li>Explícalo como si fuera para un niño.</li><li>Detecta dónde te trabas y vuelve a la fuente.</li><li>Simplifica con analogías.</li></ol>
+      </div>
+      <div class="card fey reveal">
+        <div class="fsel" id="fsel"></div>
+        <div class="fswitch"><button id="fTec" aria-pressed="true">Versión técnica</button><button id="fFey" aria-pressed="false">Versión Feynman</button></div>
+        <p class="ftext" id="ftext"></p>
+      </div>
+    </div>
+
+    <h3 class="reveal">2 · Repetición espaciada: vencer la curva del olvido</h3>
+    <div class="two">
+      <div class="card reveal">
+        <svg id="curve" viewBox="0 0 600 280" aria-label="Curva del olvido"></svg>
+        <div class="cbtns"><button class="on" data-m="0">Sin repasos</button><button data-m="1">Con repasos espaciados</button></div>
+        <p class="vcap">Modelo ilustrativo. Los puntos son repasos en los días 1, 3, 7, 14 y 28: después de cada uno, el olvido es más lento.</p>
+      </div>
+      <div class="reveal">
+        <p class="lead2">Ni la repetición espaciada ni el active recall los inventó una sola persona: evolucionaron durante décadas de investigación en psicología cognitiva. Desliza la línea del tiempo:</p>
+        <div class="rtrack" id="rtrack"></div>
+      </div>
+    </div>
+
+    <h3 class="reveal">3 · Active recall: juega con las cajas de Leitner</h3>
+    <p class="lead2 reveal">Intenta responder antes de voltear la tarjeta. Si la sabías, sube de caja (se repasa menos); si no, vuelve a la caja 1. Las preguntas son de esta misma página.</p>
+    <div class="leit reveal">
+      <div class="boxes" id="lboxes"></div>
+      <div class="lcard" id="lcard" tabindex="0" role="button" aria-label="Voltear tarjeta"><div class="lin"><div class="lf" id="lq"></div><div class="lb" id="la"></div></div></div>
+      <div class="lact"><button id="lNo">✗ Repasar</button><button id="lYes">✓ Lo sabía</button></div>
+      <p class="lmsg" id="lmsg" aria-live="polite"></p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CRÉDITOS ===================== -->
+<section id="creditos">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="sec-num">CRÉDITOS</div>
+      <h2>Referencias y derechos de autor</h2>
+      <p>Página con fines académicos y sin ánimo de lucro. Las fotos familiares son propias. Los fragmentos de series, juegos, música, logos y fotos institucionales pertenecen a sus respectivos titulares y se citan aquí como referencia.</p>
+    </div>
+    <div class="credits reveal">
+      <div><b>Música y ambientación: Ben 10: Fuerza Alienígena</b>Tema musical de Andy Sturmer. Serie creada por Man of Action, Cartoon Network Studios (2008–2010). La ambientación de esta página es un homenaje original: no usa logos ni personajes de la serie.</div>
+      <div><b>Ben 10 (2005) · Ben 10: Fuerza Alienígena</b>Creada por Man of Action. Cartoon Network Studios.</div>
+      <div><b>Generator Rex</b>Creada por Man of Action. Cartoon Network Studios.</div>
+      <div><b>Max Steel</b>Mattel, Inc.</div>
+      <div><b>Spider-Man 2 (2004)</b>Columbia Pictures / Marvel Enterprises. Spider-Man © Marvel.</div>
+      <div><b>Mr. Robot</b>Creada por Sam Esmail. USA Network / Universal Content Productions.</div>
+      <div><b>Geometry Dash</b>RobTop Games (Robert Topala).</div>
+      <div><b>Un Show Más (Regular Show)</b>Creada por J. G. Quintel. Cartoon Network Studios.</div>
+      <div><b>Hora de Aventura (Adventure Time)</b>Creada por Pendleton Ward. Frederator Studios / Cartoon Network Studios.</div>
+      <div><b>“Roll the Dice” (Lanzar los dados)</b>Poema de Charles Bukowski, en <i>What Matters Most Is How Well You Walk Through the Fire</i> (1999).</div>
+      <div><b>Software y logos</b>Nero Burning ROM © Nero AG · Windows © Microsoft Corporation · Rufus © Pete Batard.</div>
+      <div><b>Universidad Católica de Colombia</b>Logo y fotografías del campus © Universidad Católica de Colombia.</div>
+      <div><b>Mejora de imagen</b>Real-ESRGAN (Xintao Wang et al., 2021), licencia BSD-3-Clause.</div>
+      <div><b>FastAPI</b>Creado por Sebastián Ramírez (tiangolo). Licencia MIT.</div>
+      <div><b>Git · GitHub</b>Git, creado por Linus Torvalds (GPLv2). GitHub © GitHub, Inc. (Microsoft).</div>
+      <div><b>Calidad y usabilidad</b>ISO/IEC 25010 (modelo de calidad del producto de software) · Heurísticas de usabilidad de Jakob Nielsen.</div>
+      <div><b>Memoria y aprendizaje</b>Ebbinghaus, H. (1885). <i>Über das Gedächtnis</i> · Roediger, H. y Karpicke, J. (2006). Test-enhanced learning, <i>Psychological Science</i>.</div>
+      <div><b>Diagrama de Venn</b>John Venn (1880). La técnica Feynman se inspira en el estilo de enseñanza de Richard Feynman.</div>
+      <div><b>Tipografías</b>Orbitron, Chakra Petch e Inter · Google Fonts (SIL Open Font License).</div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><b>Juan Lozano Calderón</b> · Taller 3: Creación de servidor web Apache en EC2 AWS · Universidad Católica de Colombia · 2026-3</p>
+    <p>Servido desde Apache HTTP Server en Amazon EC2 · <span id="clock"></span></p>
+  </div>
+</footer>
+
+<!-- ===================== REPRODUCTOR ===================== -->
+<div id="player" aria-label="Reproductor de música">
+  <button class="pp" id="pp" aria-label="Reproducir música">▶</button>
+  <div class="tape" aria-hidden="true"><i></i><i></i></div>
+  <div class="meta"><b id="ptitle">Ben 10: Fuerza Alienígena</b><span id="psub">Tema · Andy Sturmer · Cartoon Network</span></div>
+  <input type="range" id="vol" min="0" max="1" step="0.05" value="0.5" aria-label="Volumen">
+</div>
+<audio id="bgm" src="parte1/audio/ben_10_alien_force.mp3" loop preload="none"></audio>
+
+<!-- ===================== MODALES ===================== -->
+<div class="modal" id="lb" role="dialog" aria-modal="true" aria-label="Visor de fotos">
+  <button class="x" data-close aria-label="Cerrar">✕</button>
+  <button class="nav pv" aria-label="Anterior">‹</button>
+  <figure><img alt=""><figcaption></figcaption></figure>
+  <button class="nav nx" aria-label="Siguiente">›</button>
+</div>
+<div class="modal" id="vm" role="dialog" aria-modal="true" aria-label="Reproductor de video">
+  <button class="x" data-close aria-label="Cerrar">✕</button>
+  <div class="box"><video controls playsinline></video><h4></h4><p></p></div>
+</div>
+<div id="flash"></div>
+<div id="toast">¡MISIÓN COMPLETA!<small>Gracias por recorrer mi historia</small></div>
+
+<script>
+/* =========================================================
+   DATOS — edita aquí textos, fotos y videos
+   ========================================================= */
+const IMG = "parte1/img/";
+const FOTOS = {
+  yo: [
+    ["yo/yo-01.jpg",""],["yo/yo-03.jpg",""],["yo/mr-robot-moment.jpg","Mr. Robot moment!","MR. ROBOT"],
+    ["yo/yo-05.jpg",""],["yo/yo-06.jpg",""],["yo/yo-02.jpg",""],
+    ["yo/yo-11.jpg",""],["yo/yo-12.jpg",""],["yo/yo-13.jpg",""],["yo/yo-16.jpg",""],["yo/yo-08.jpg",""],
+    ["yo/yo-10.jpg",""],["yo/yo-navidad-nino.jpg","Navidad de niño"],["yo/spiderman-nino.jpg","De niño ya era Spider-Man"]
+  ],
+  universidad: [
+    ["universidad/logo-ucatolica.jpg","Universidad Católica de Colombia"],
+    ["universidad/campus-1.jpg","Campus"],
+    ["universidad/campus-2.jpg","Campus"],
+    ["universidad/campus-3.jpg","Campus"],
+    ["universidad/campus-4.jpg","Campus"]
+  ]
+};
+
+const VIDEOS = {
+  correo: [
+    ["parte2/video/LANZAR_LOS_DATOS_BUKOWSKI_LETTER_EMAIL_FABIAN_LOZANO_2022","Lanzar los dados","Charles Bukowski · el video que acompañó el correo de Fabián (2022)"]
+  ],
+  chicky: [
+    ["parte2/video/CHICKY_RUNNING","Chicky corriendo 🕊️",""]
+  ],
+  inspiracion: [
+    ["parte2/video/ME_3_MR_ROBOT_INTEREST","Mi interés por Mr. Robot","Cómo empezó todo"],
+    ["parte2/video/ME_MR_ROBOT","Mr. Robot","USA Network"],
+    ["parte2/video/ME_SPIDERMAN_2","Spider-Man 2","Columbia Pictures / Marvel"],
+    ["parte2/video/ME_BEN_10_ORIGINAL","Ben 10 (original)","Cartoon Network"],
+    ["parte2/video/ME_MAX_STEEL","Max Steel","Mattel"],
+    ["parte2/video/GEOMETRY_DASH_GAME_WHO_TEACH_ME_DISCILIPNE_AND_LEARN_ABOUT_MY_MISTAKES_TO_ADVANCE","Geometry Dash","Me enseñó disciplina y a aprender de mis errores para avanzar"]
+  ],
+  infancia: [
+    ["parte3/video/INTEREST_BEN_10_ALIEN_FORCE_FOR_BE_ENGINEER","Ben 10: Fuerza Alienígena","Mi interés por ser ingeniero"],
+    ["parte3/video/ME_UN_SHOW_MAS","Un Show Más","Cartoon Network"],
+    ["parte3/video/ME_GARY_DAVID_REGULAR_SHOW","Un Show Más · Gary David","Cartoon Network"],
+    ["parte3/video/ME_ADVENTURE_TIME","Hora de Aventura","Cartoon Network"],
+    ["parte3/video/ME_BEN_10_REX_","Generator Rex","Cartoon Network"]
+  ]
+};
+const poster = f => f.replace("/video/", "/video/posters/") + ".jpg";
+
+const DOCENTES = ["Jaime Díaz","José Joaquín Prieto","Andrés Torres","Sergio Arturo Piñeros","Sergio Galvis Motoa","Juan Carlos Navarro","Diana Toquica","Sara Sánchez","Hellen Parra","Solangie Garavito","Diego Osorio","Luis Salazar","Héctor Jaimes","Fredy Pardo","Manuel Báez","Katherine Serrano","Santos Triana","César González","Marisol Necomon","Carlos Blanco","Giovany Martínez","Rubén Castañeda","Mario Suárez","Valery Cely","Nelson Fino","Carlos","Fredy Sierra","Luis Narváez","Stiven Leonardo Silva","Julián Calixto","Jesús Paternina","Francesco Ferrari","María Cadavid","Aníbal","Ana Rocío"];
+
+const FRASES = ["Estudiante de Ingeniería de Sistemas y Computación","Futuro especialista en Ciberseguridad","Hermano menor, tío y soñador","Fan de Ben 10: Fuerza Alienígena","Caerse 7 veces, levantarse 8"];
+
+const TERMINAL = [
+  ["$ curiosidad --listar-temas",""],
+  ["→ Quemar una imagen ISO en Nero","ok"],
+  ["→ Formatear un PC con una USB booteable (Rufus)","ok"],
+  ["→ Álgebra de Baldor","ok"],
+  ["→ Estadística, probabilidad y tendencia central","ok"],
+  ["→ Ver cómo desarman un computador","wip"],
+  ["$ disciplina && resiliencia",""],
+  ["✔ Proceso completado: aquí estoy hoy.","ok"]
+];
+
+/* =========================================================
+   UTILIDADES
+   ========================================================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* ---------- Visor de fotos (lightbox) ---------- */
+const lb = $("#lb"); let lbList = [], lbI = 0;
+function openLB(list, i) { lbList = list; lbI = i; showLB(); lb.classList.add("on"); document.body.style.overflow = "hidden"; }
+function showLB() {
+  const [src, cap] = lbList[lbI];
+  $("img", lb).src = IMG + src; $("img", lb).alt = cap || "Foto";
+  $("figcaption", lb).innerHTML = esc(cap || "") + `<small>${lbI + 1} / ${lbList.length}</small>`;
+  $$(".nav", lb).forEach(b => b.style.display = lbList.length > 1 ? "" : "none");
+}
+$(".pv", lb).onclick = () => { lbI = (lbI - 1 + lbList.length) % lbList.length; showLB(); };
+$(".nx", lb).onclick = () => { lbI = (lbI + 1) % lbList.length; showLB(); };
+let tx = 0;
+lb.addEventListener("touchstart", e => tx = e.touches[0].clientX, { passive: true });
+lb.addEventListener("touchend", e => { const d = e.changedTouches[0].clientX - tx; if (Math.abs(d) > 50) (d < 0 ? $(".nx", lb) : $(".pv", lb)).click(); });
+$$("[data-single]").forEach(el => el.addEventListener("click", () => { const [s, c] = el.dataset.single.split("|"); openLB([[s, c]], 0); }));
+
+/* ---------- Carruseles ---------- */
+$$(".carousel[data-c]").forEach(c => {
+  const list = FOTOS[c.dataset.c] || [];
+  c.innerHTML = `<button class="c-btn c-prev" aria-label="Anterior">‹</button><div class="track">${
+    list.map(([s, cap, tag], i) => `<figure class="slide" data-i="${i}">${tag ? `<span class="tag">${esc(tag)}</span>` : ""}<img src="${IMG}${s}" alt="${esc(cap || "Foto de Juan")}" loading="lazy">${cap ? `<figcaption>${esc(cap)}</figcaption>` : ""}</figure>`).join("")
+  }</div><button class="c-btn c-next" aria-label="Siguiente">›</button><div class="dots">${list.map((_, i) => `<button aria-label="Foto ${i + 1}"></button>`).join("")}</div>`;
+  const tr = $(".track", c), slides = $$(".slide", c), dots = $$(".dots button", c);
+  if (list.length < 2) { $$(".c-btn", c).forEach(b => b.remove()); $(".dots", c).remove(); }
+  const go = i => { const s = slides[(i + slides.length) % slides.length]; tr.scrollTo({ left: s.offsetLeft - (tr.clientWidth - s.clientWidth) / 2, behavior: "smooth" }); };
+  const cur = () => { let best = 0, bd = 1e9; const mid = tr.scrollLeft + tr.clientWidth / 2; slides.forEach((s, i) => { const d = Math.abs(s.offsetLeft + s.clientWidth / 2 - mid); if (d < bd) { bd = d; best = i; } }); return best; };
+  const mark = () => { const k = cur(); dots.forEach((d, i) => d.classList.toggle("on", i === k)); };
+  tr.addEventListener("scroll", () => requestAnimationFrame(mark), { passive: true }); mark();
+  $(".c-prev", c)?.addEventListener("click", () => go(cur() - 1));
+  $(".c-next", c)?.addEventListener("click", () => go(cur() + 1));
+  dots.forEach((d, i) => d.addEventListener("click", () => go(i)));
+  slides.forEach((s, i) => s.addEventListener("click", () => openLB(list, i)));
+  // autoplay suave, se pausa al pasar el mouse o tocar
+  let paused = false;
+  c.addEventListener("mouseenter", () => paused = true); c.addEventListener("mouseleave", () => paused = false);
+  tr.addEventListener("touchstart", () => { paused = true; setTimeout(() => paused = false, 8000); }, { passive: true });
+  if (!reduce && list.length > 1) setInterval(() => { if (!paused && !document.hidden && c.offsetParent && isVisible(c)) { const k = cur(); go(k === slides.length - 1 ? 0 : k + 1); } }, 4200);
+});
+function isVisible(el) { const r = el.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight; }
+
+/* ---------- Tarjetas de video ---------- */
+const vm = $("#vm"), vmv = $("video", vm);
+const fmt = s => isFinite(s) ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}` : "";
+$$("[data-v]").forEach(g => {
+  (VIDEOS[g.dataset.v] || []).forEach(([f, title, sub]) => {
+    const b = document.createElement("button");
+    b.className = "vcard"; b.setAttribute("aria-label", "Ver video: " + title);
+    b.innerHTML = `<img src="${poster(f)}" alt="" loading="lazy"><video muted loop playsinline preload="none" src="${f}.mp4"></video><span class="dur"></span><span class="play">▶</span><span class="vinfo"><b>${esc(title)}</b><small>${esc(sub)}</small></span>`;
+    const pv = $("video", b);
+    pv.addEventListener("loadedmetadata", () => $(".dur", b).textContent = fmt(pv.duration));
+    b.addEventListener("mouseenter", () => { if (matchMedia("(hover:hover)").matches && !reduce) { b.classList.add("hov"); pv.currentTime = Math.min(5, pv.duration || 0) || 0; pv.play().catch(() => {}); } });
+    b.addEventListener("mouseleave", () => { b.classList.remove("hov"); pv.pause(); });
+    b.addEventListener("click", () => { pv.pause(); openVideo(f, title, sub); });
+    g.appendChild(b);
+  });
+});
+function openVideo(f, title, sub) {
+  vmv.src = f + ".mp4"; vmv.poster = poster(f);
+  $("h4", vm).textContent = title; $("p", vm).textContent = sub;
+  vm.classList.add("on"); document.body.style.overflow = "hidden";
+  duckMusic(true); vmv.play().catch(() => {});
+}
+
+/* ---------- Cerrar modales ---------- */
+function closeModals() {
+  $$(".modal.on").forEach(m => m.classList.remove("on"));
+  vmv.pause(); vmv.removeAttribute("src"); vmv.load();
+  document.body.style.overflow = ""; duckMusic(false);
+}
+$$("[data-close]").forEach(b => b.addEventListener("click", closeModals));
+$$(".modal").forEach(m => m.addEventListener("click", e => { if (e.target === m) closeModals(); }));
+addEventListener("keydown", e => {
+  if (e.key === "Escape") closeModals();
+  if (lb.classList.contains("on")) { if (e.key === "ArrowRight") $(".nx", lb).click(); if (e.key === "ArrowLeft") $(".pv", lb).click(); }
+});
+
+/* ---------- Pestañas de hermanos ---------- */
+$$("#tabs button").forEach(b => b.addEventListener("click", () => {
+  $$("#tabs button").forEach(x => x.setAttribute("aria-selected", x === b));
+  $$(".tabpanel").forEach(p => p.classList.toggle("on", p.id === "t-" + b.dataset.t));
+}));
+
+/* ---------- Antes / después ---------- */
+const ba = $("#ba"); if (ba && $("input", ba)) $("input", ba).addEventListener("input", e => ba.style.setProperty("--x", e.target.value + "%"));
+
+/* ---------- Hub de ciberseguridad ---------- */
+["Ciclo de desarrollo de software", "IA / Machine Learning", "Nube", "Redes e infraestructura de TI"].forEach((t, i, a) => {
+  const ang = (i / a.length) * Math.PI * 2 - Math.PI / 2, n = document.createElement("div");
+  n.className = "node"; n.textContent = t;
+  n.style.left = 50 + 40 * Math.cos(ang) + "%"; n.style.top = 50 + 40 * Math.sin(ang) + "%";
+  $("#hub").appendChild(n);
+});
+
+/* ---------- Docentes ---------- */
+const cloud = $("#cloud");
+DOCENTES.forEach(d => { const s = document.createElement("span"); s.className = "chip"; s.textContent = d; cloud.appendChild(s); });
+$("#tq").addEventListener("input", e => { const q = e.target.value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase(); $$(".chip", cloud).forEach(c => c.classList.toggle("hide", !c.textContent.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().includes(q))); });
+$("#tspot").addEventListener("click", () => {
+  const chips = $$(".chip:not(.hide)", cloud); if (!chips.length) return;
+  let n = 0; const total = reduce ? 1 : 14;
+  const t = setInterval(() => {
+    chips.forEach(c => c.classList.remove("star"));
+    const c = chips[Math.floor(Math.random() * chips.length)]; c.classList.add("star");
+    if (++n >= total) { clearInterval(t); $("#spot").textContent = "★ Gracias, " + c.textContent + "!"; }
+  }, 90);
+});
+
+
+/* ---------- Listas enlazadas: simulador ---------- */
+(function listas() {
+  const box = $("#ll"); if (!box) return;
+  const out = $("#llOut"), inp = $("#llVal"), btns = $$(".sim-ctrl button");
+  let lista = [10, 20, 30], busy = false;
+  const wait = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
+  const log = (t, cls = "") => { const sp = document.createElement("span"); if (cls) sp.className = cls; sp.textContent = t + "\n"; out.appendChild(sp); out.scrollTop = out.scrollHeight; };
+  const hot = fn => $$("#llCode .cfn").forEach(c => c.classList.toggle("hot", c.dataset.fn === fn));
+  function draw() {
+    box.innerHTML = `<span class="lbl">cab →</span>` + (lista.length ? lista.map((d, i) => `<span class="nodo${i ? "" : " cab"}" data-i="${i}"><b>${d}</b><i>sig</i></span><span class="flecha">→</span>`).join("") : "") + `<span class="null">NULL</span>`;
+  }
+  const nodes = () => $$(".nodo", box);
+  const mostrar = () => { hot("mostrarLista"); log(lista.length ? lista.join(" -> ") + " -> " : "(lista vacía)", "p"); };
+  async function recorrer(d) { // igual que buscarNodo
+    const ns = nodes();
+    for (let i = 0; i < ns.length; i++) {
+      ns.forEach(n => n.classList.remove("aux")); ns[i].classList.add("aux"); await wait(380);
+      if (lista[i] === d) { ns[i].classList.add("hit"); return i; }
+    }
+    ns.forEach(n => n.classList.remove("aux")); return -1;
+  }
+  async function run(op) {
+    const raw = inp.value.trim(), d = Number(raw);
+    if (op !== "reset" && (raw === "" || !Number.isInteger(d))) { log("Digite un número entero primero.", "wip"); inp.focus(); return; }
+    busy = true; btns.forEach(b => b.disabled = true);
+    if (op === "insertar") {
+      if (!lista.length) { hot("crearLista"); lista.push(d); draw(); log(`crearLista(cab, ${d})`, "ok"); }
+      else { hot("insertarFinal"); const ns = nodes(); for (const n of ns) { ns.forEach(x => x.classList.remove("aux")); n.classList.add("aux"); await wait(220); } lista.push(d); draw(); log(`insertarFinal(cab, ${d})`, "ok"); }
+      await wait(250); mostrar();
+    } else if (op === "buscar") {
+      hot("buscarNodo"); const i = await recorrer(d);
+      log(i >= 0 ? "El dato existe" : "El dato no existe", i >= 0 ? "ok" : "wip");
+      await wait(700); draw();
+    } else if (op === "eliminar") {
+      hot("buscarNodo"); const i = await recorrer(d);
+      if (i < 0) { log("El dato no existe", "wip"); }
+      else {
+        log("El dato existe en la lista", "ok"); await wait(300);
+        hot(i === 0 ? "eliminarInicio" : "eliminarMedio");
+        nodes()[i].classList.add("bye"); await wait(450);
+        lista.splice(i, 1); draw();
+        log(`${i === 0 ? "eliminarInicio(cab)" : "eliminarMedio(cab, buscar)"} · Lista modificada...`, "ok"); mostrar();
+      }
+      await wait(200); draw();
+    } else { lista = [10, 20, 30]; out.textContent = ""; draw(); log("Lista reiniciada: 10, 20, 30", "p"); hot(""); }
+    busy = false; btns.forEach(b => b.disabled = false); inp.select();
+  }
+  btns.forEach(b => b.addEventListener("click", () => !busy && run(b.dataset.op)));
+  inp.addEventListener("keydown", e => { if (e.key === "Enter" && !busy) run("insertar"); });
+  $("#llCopy").addEventListener("click", e => {
+    navigator.clipboard?.writeText($("#llCode").textContent).then(() => { e.target.textContent = "¡Copiado!"; setTimeout(() => e.target.textContent = "Copiar", 1500); }).catch(() => {});
+  });
+  draw(); log("$ ./listas_enlazadas", "p"); mostrar(); hot("");
+})();
+
+
+/* =========================================================
+   MISIONES 06-08 · ARSENAL, SINERGIA Y CÓMO APRENDO
+   ========================================================= */
+const sleep = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
+
+/* ---------- Pestañas del arsenal ---------- */
+(function tabs() {
+  const bs = $$(".tabs4 button"); if (!bs.length) return;
+  bs.forEach(b => b.addEventListener("click", () => {
+    bs.forEach(x => x.setAttribute("aria-selected", x === b));
+    $$(".tpanel").forEach(p => p.classList.toggle("on", p.id === "tp-" + b.dataset.tab));
+  }));
+})();
+
+/* ---------- Simulador de Git ---------- */
+(function gitSim() {
+  const out = $("#gitOut"), box = $("#gitCmds"), svg = $("#gitSvg"), exp = $("#gitExp span"), cloud = $("#gitCloud");
+  if (!out) return;
+  const MSGS = ["Primer commit: estructura de la página", "Agrega la sección Yo", "Estilos Fuerza Alienígena", "Simulador de listas enlazadas", "Sección Mi arsenal", "Corrige errores de JavaScript", "Agrega curva del olvido"];
+  const URL = "https://github.com/juan-lozano/portafolio.git";
+  let G, busy = false;
+  const hex = () => Math.random().toString(16).slice(2, 9).padEnd(7, "0");
+  function reset() {
+    G = { init: false, staged: false, commits: [], br: {}, cur: "main", remote: false, pushed: null, base: null, featNew: 0, m: 0 };
+    out.textContent = ""; line("# Simulador de Git: toca los comandos de abajo", "p");
+    exp.innerHTML = "Empieza con <code>git init</code>: convierte tu carpeta en un repositorio que recuerda cada cambio.";
+    cloud.textContent = "☁ GitHub: sin conectar"; cloud.classList.remove("on");
+  }
+  function line(t, cls) { const s = document.createElement("span"); if (cls) s.className = cls; s.textContent = t + "\n"; out.appendChild(s); out.scrollTop = out.scrollHeight; }
+  const head = () => G.br[G.cur];
+  const byId = id => G.commits.find(c => c.id === id);
+  function reach(id, set = new Set()) { if (!id || set.has(id)) return set; set.add(id); byId(id).parents.forEach(p => reach(p, set)); return set; }
+  function commit(msg, parents, lane) { const c = { id: hex(), parents, lane, msg, x: G.commits.length }; G.commits.push(c); G.br[G.cur] = c.id; return c; }
+  const CMDS = [
+    { k: "init", t: () => "git init", can: () => !G.init, run() { G.init = true; return [["Initialized empty Git repository in ~/portafolio/.git/", "ok"]]; }, e: "Crea un repositorio: Git empieza a vigilar la carpeta y a guardar el historial de cambios en una carpeta oculta <code>.git</code>." },
+    { k: "add", t: () => "git add .", can: () => G.init && !G.staged, run() { G.staged = true; return [["(sin salida) cambios listos en el staging area", "wip"]]; }, e: "Es como meter los cambios en una caja antes de sellarla. Eliges qué entra en la próxima foto del proyecto; el punto significa «todo»." },
+    { k: "commit", t: () => `git commit -m "${MSGS[G.m % MSGS.length]}"`, can: () => G.staged, run() {
+        const msg = MSGS[G.m++ % MSGS.length], first = !G.commits.length, c = commit(msg, head() ? [head()] : [], G.cur === "main" ? 0 : 1);
+        G.staged = false; if (G.cur === "feature") G.featNew++;
+        return [[`[${G.cur}${first ? " (root-commit)" : ""} ${c.id}] ${msg}`, "ok"], [" 3 files changed, 42 insertions(+)", ""]];
+      }, e: "Sella la caja: guarda una foto permanente del proyecto con un mensaje que explica qué cambiaste. Mensajes cortos y claros = buen portafolio." },
+    { k: "remote", t: () => `git remote add origin ${URL}`, can: () => G.init && !G.remote, run() { G.remote = true; cloud.textContent = "☁ GitHub: conectado"; cloud.classList.add("on"); return [["(sin salida) remoto «origin» agregado", "wip"]]; }, e: "Le dice a tu repositorio dónde vive su copia en la nube (GitHub). «origin» es solo el apodo de esa dirección." },
+    { k: "push", t: () => "git push -u origin main", can: () => G.remote && G.br.main && G.pushed !== G.br.main, run() {
+        const first = !G.pushed, old = G.pushed; G.pushed = G.br.main;
+        const r = [[`Enumerating objects: ${reach(G.br.main).size * 3}, done.`, ""], [`To ${URL}`, ""]];
+        r.push(first ? [" * [new branch]      main -> main", "ok"] : [` ${old}..${G.br.main}  main -> main`, "ok"]);
+        if (first) r.push(["branch 'main' set up to track 'origin/main'.", "ok"]);
+        return r;
+      }, e: "Sube tus commits a GitHub. El <code>-u</code> deja vinculada tu rama main con origin/main: la próxima vez basta con <code>git push</code>." },
+    { k: "branch", t: () => "git branch feature", can: () => G.br.main && !("feature" in G.br), run() { G.br.feature = G.br.main; G.base = G.br.main; return [["(sin salida) rama «feature» creada", "wip"]]; }, e: "Crea una rama: un universo paralelo donde puedes experimentar sin dañar la versión principal (main)." },
+    { k: "swf", t: () => "git switch feature", can: () => "feature" in G.br && G.cur !== "feature", run() { G.cur = "feature"; return [["Switched to branch 'feature'", "ok"]]; }, e: "Te mueves a la rama feature. Lo que hagas aquí no toca main hasta que lo fusiones. (También se usa <code>git checkout feature</code>.)" },
+    { k: "swm", t: () => "git switch main", can: () => G.cur !== "main", run() { G.cur = "main"; return [["Switched to branch 'main'", "ok"]]; }, e: "Vuelves a la rama principal." },
+    { k: "merge", t: () => "git merge feature", can: () => G.cur === "main" && G.featNew > 0, run() {
+        G.featNew = 0;
+        if (G.br.main === G.base) { G.br.main = G.br.feature; G.base = G.br.feature; return [["Updating… Fast-forward", "ok"]]; }
+        commit("Merge branch 'feature'", [G.br.main, G.br.feature], 0); G.base = G.br.feature;
+        return [["Merge made by the 'ort' strategy.", "ok"]];
+      }, e: "Fusiona: trae a main el trabajo terminado en feature. Si main no había cambiado, Git solo «adelanta» el puntero (fast-forward)." },
+    { k: "log", t: () => "git log --oneline", can: () => G.commits.length > 0, run() { const ids = [...reach(head())].map(byId).sort((a, b) => b.x - a.x); return ids.map(c => [`${c.id} ${c.msg}`, "p"]); }, e: "Muestra el historial: cada línea es un commit con su identificador corto." }
+  ];
+  const SEQ = ["init", "add", "commit", "remote", "push", "branch", "swf", "add", "commit", "swm", "merge", "push", "log"];
+  let step = 0;
+  function render() {
+    const ok = CMDS.filter(c => c.can()).map(c => c.k);
+    while (step < SEQ.length && !ok.includes(SEQ[step])) { if (CMDS.find(c => c.k === SEQ[step]).can()) break; step++; }
+    const hint = SEQ[step] && ok.includes(SEQ[step]) ? SEQ[step] : ok[0];
+    box.innerHTML = CMDS.map(c => `<button data-k="${c.k}" ${c.can() && !busy ? "" : "disabled"} class="${c.k === hint ? "hint" : ""}">${esc(c.t())}</button>`).join("") + `<button class="rst" data-k="reset">↺ reiniciar</button>`;
+    draw();
+  }
+  function draw() {
+    const W = Math.max(380, 70 + G.commits.length * 56), up = G.pushed ? reach(G.pushed) : new Set();
+    svg.setAttribute("width", W); svg.setAttribute("viewBox", `0 0 ${W} 120`);
+    const X = c => 40 + c.x * 56, Y = c => c.lane ? 88 : 40;
+    let h = `<line class="lane" x1="10" y1="40" x2="${W}" y2="40"/>` + ("feature" in G.br ? `<line class="lane" x1="10" y1="88" x2="${W}" y2="88"/>` : "");
+    if (!G.commits.length) h += `<text x="14" y="70">${G.init ? "Repositorio vacío: haz tu primer commit" : "Aún no hay repositorio"}</text>`;
+    G.commits.forEach(c => c.parents.forEach(p => { const q = byId(p); h += `<path class="edge" d="M${X(q)} ${Y(q)} C${X(q) + 28} ${Y(q)} ${X(c) - 28} ${Y(c)} ${X(c)} ${Y(c)}"/>`; }));
+    G.commits.forEach((c, i) => { h += `<circle class="cm${up.has(c.id) ? " up" : ""}${i === G.commits.length - 1 ? " new" : ""}" cx="${X(c)}" cy="${Y(c)}" r="10"><title>${esc(c.id + " " + c.msg)}</title></circle>`; });
+    const tags = {};
+    Object.entries(G.br).forEach(([b, id]) => (tags[id] = tags[id] || []).push([b + (G.cur === b ? " ●" : ""), b === "main" ? "tagm" : "tagf"]));
+    if (G.pushed) (tags[G.pushed] = tags[G.pushed] || []).push(["origin/main", "tago"]);
+    Object.entries(tags).forEach(([id, list]) => { const c = byId(id); list.forEach(([t, cls], k) => { const w = t.length * 6.6 + 10, yy = c.lane ? Y(c) + 16 + k * 17 : Y(c) - 30 - k * 17; h += `<rect class="${cls}" x="${X(c) - w / 2}" y="${yy}" width="${w}" height="15" rx="4"/><text class="tagt" x="${X(c)}" y="${yy + 11}" text-anchor="middle">${esc(t)}</text>`; }); });
+    svg.innerHTML = h;
+  }
+  async function run(k) {
+    if (k === "reset") { step = 0; reset(); render(); return; }
+    const c = CMDS.find(x => x.k === k); if (!c || !c.can() || busy) return;
+    busy = true; render();
+    const txt = "$ " + c.t(), s = document.createElement("span"); s.className = "p"; out.appendChild(s);
+    for (let i = 1; i <= txt.length; i++) { s.textContent = txt.slice(0, i); if (i % 2 === 0) await sleep(12); }
+    out.appendChild(document.createTextNode("\n"));
+    c.run().forEach(([t, cls]) => line(t, cls));
+    exp.innerHTML = c.e;
+    if (SEQ[step] === k) step++;
+    busy = false; render();
+  }
+  box.addEventListener("click", e => { const b = e.target.closest("button"); if (b) run(b.dataset.k); });
+  reset(); render();
+})();
+
+/* ---------- FastAPI: navegador simulado ---------- */
+(function api() {
+  const v = $("#apiView"); if (!v) return;
+  const R = {
+    "/api/saludo": `<div class="bstatus">200 OK · application/json</div><pre>{\n  "mensaje": "Hola, soy Juan"\n}</pre><p class="dimc" style="margin-top:10px">Datos puros: ideal para que otra app (o un frontend) los consuma.</p>`,
+    "/": `<div class="bstatus">200 OK · text/html</div><div class="hdemo"><h1>Hola, soy Juan</h1><p>Con <b>HTMLResponse</b> el mismo servidor entrega una página completa, y con CSS se vuelve estilosa y animada.</p></div>`,
+    "/docs": `<div class="bstatus">200 OK · Swagger UI (generado automáticamente)</div><div class="swag"><div><b>GET</b>/api/saludo · Saludo</div><div><b>GET</b>/ · Inicio</div></div><p class="dimc" style="margin-top:10px">FastAPI documenta los endpoints solo: se pueden probar desde el navegador. Eso también es usabilidad, pero para desarrolladores.</p>`
+  };
+  $$(".breqs button").forEach(b => b.addEventListener("click", () => {
+    $$(".breqs button").forEach(x => x.classList.toggle("on", x === b));
+    $("#apiUrl").textContent = "http://127.0.0.1:8000" + b.dataset.ep;
+    $$("#tp-api .cfn").forEach(c => c.classList.toggle("hot", c.dataset.ep === b.dataset.ep));
+    v.innerHTML = `<p class="dimc">Enviando petición…</p>`;
+    setTimeout(() => v.innerHTML = R[b.dataset.ep], reduce ? 0 : 350);
+  }));
+})();
+
+/* ---------- Tarjetas que se voltean ---------- */
+function flips(sel, items) {
+  const el = $(sel); if (!el) return;
+  el.innerHTML = items.map(([ic, t, sub, back]) => `<button class="flip" aria-label="${esc(t)}: voltear"><span class="fin"><span class="ff"><span>${ic}</span><b>${esc(t)}</b><small>${esc(sub)}</small></span><span class="fb">${esc(back)}</span></span></button>`).join("");
+  $$(".flip", el).forEach(f => f.addEventListener("click", () => f.classList.toggle("on")));
+}
+flips("#usaFlips", [
+  ["📊", "Ver el estado del sistema", "Toca para ver", "La barra de nivel de arriba y el % te dicen siempre cuánto llevas recorrido."],
+  ["🚪", "Control y libertad", "Toca para ver", "Puedes entrar sin música, pausarla, y cerrar fotos o videos con ✕ o con la tecla Esc."],
+  ["🛡", "Prevenir errores", "Toca para ver", "En el simulador de Git solo se activan los comandos válidos: no puedes hacer commit sin git add."],
+  ["💡", "Reconocer, no recordar", "Toca para ver", "El comando sugerido brilla y cada acción explica qué pasó en palabras simples."],
+  ["📱", "Funciona en el celular", "Toca para ver", "El diseño se reorganiza en pantallas pequeñas y los carruseles se deslizan con el dedo."],
+  ["🌙", "Accesibilidad", "Toca para ver", "Si tu sistema pide menos movimiento, las animaciones se apagan. Los botones funcionan con teclado."]
+]);
+flips("#secFlips", [
+  ["💥", "Exploit", "¿Qué es?", "Código o técnica que aprovecha una vulnerabilidad (un fallo) para hacer que un sistema haga algo que no debería."],
+  ["🏭", "PLC", "¿Qué es?", "Controlador Lógico Programable: un computador industrial que maneja máquinas. Si lo atacan, el daño llega al mundo físico."],
+  ["🖥", "Hipervisor", "¿Qué es?", "Software que crea y ejecuta máquinas virtuales: varios «computadores» dentro de uno solo."],
+  ["📦", "Sandbox", "¿Qué es?", "Una caja de arena aislada: ejecutas algo sospechoso ahí dentro para estudiarlo sin poner en riesgo el sistema real."],
+  ["🎣", "Phishing", "¿Qué es?", "Engaño por correo, mensaje o página falsa para que entregues contraseñas o datos. Pensar antes de hacer clic es la mejor defensa."],
+  ["🔐", "ISO/IEC 27001", "¿Qué es?", "Norma internacional para gestionar la seguridad de la información en una organización."]
+]);
+
+/* ---------- Arquitectura: el puente ---------- */
+(function arq() {
+  const steps = $$(".bstep"); if (!steps.length) return;
+  const T = [
+    ["Elicitación", "Levantar la información: entrevistar a usuarios y stakeholders, observar y preguntar qué necesitan de verdad. Aquí nacen los requerimientos."],
+    ["Análisis", "Ordenar y priorizar lo levantado: requerimientos funcionales, no funcionales y restricciones. ¿Qué es lo más importante?"],
+    ["Arquitectura: el puente", "Une los requerimientos con el diseño. El arquitecto decide la estructura del sistema según los atributos de calidad que más importan (seguridad, rendimiento, usabilidad…) y negocia sus compromisos."],
+    ["Diseño", "Con la arquitectura definida, se detallan componentes, clases, interfaces y datos para construir la solución."]
+  ];
+  const deck = $(".bdeck"), exp = $("#bexp");
+  const show = i => { steps.forEach((s, k) => s.classList.toggle("on", k <= i)); deck.classList.toggle("built", i >= 2); exp.innerHTML = `<b>${T[i][0]}</b><p>${T[i][1]}</p>`; };
+  steps.forEach((s, i) => s.addEventListener("click", () => show(i)));
+  show(0);
+  const Q = [["Usabilidad", "Qué tan fácil, eficiente y agradable es usar el sistema.", 1], ["Seguridad", "Proteger datos y funciones de accesos indebidos: confidencialidad, integridad y disponibilidad.", 1], ["Rendimiento", "Responder rápido y aprovechar bien los recursos bajo carga."], ["Disponibilidad", "Que el sistema esté funcionando cuando se necesita (por ejemplo, 99,9 % del tiempo)."], ["Mantenibilidad", "Qué tan fácil es corregir, cambiar o mejorar el sistema."], ["Escalabilidad", "Crecer para atender más usuarios o datos sin rehacerlo todo."], ["Portabilidad", "Funcionar en distintos entornos: otro servidor, otra nube, otro sistema operativo."], ["Fiabilidad", "Funcionar sin fallar durante un periodo y recuperarse cuando algo sale mal."]];
+  $("#qgrid").innerHTML = Q.map(([n, , s], i) => `<button data-i="${i}" class="${s ? "star" : ""}">${n}</button>`).join("");
+  $$("#qgrid button").forEach(b => b.addEventListener("click", () => { $$("#qgrid button").forEach(x => x.classList.toggle("on", x === b)); const q = Q[b.dataset.i]; $("#qinfo").innerHTML = `<b>${q[0]}.</b> ${q[1]}${q[2] ? " <br><small style='color:var(--lime)'>★ Clave en mi camino: usabilidad en esta página y seguridad en mi especialización.</small>" : ""}`; }));
+  const S = [["Comunicación", "Explicar decisiones técnicas a clientes y equipos."], ["Negociación", "Balancear lo que piden los stakeholders con lo posible."], ["Liderazgo", "Guiar al equipo hacia una visión técnica común."], ["Pensamiento sistémico", "Ver el sistema completo, no solo una parte."], ["Toma de decisiones", "Elegir con datos y asumir los compromisos (trade-offs)."], ["Empatía", "Entender al usuario y al equipo que construye."]];
+  $("#skills").innerHTML = S.map(([a, b]) => `<div><b>${a}</b>${b}</div>`).join("");
+})();
+
+/* ---------- Portafolio ---------- */
+(function port() {
+  const tr = $("#ptrack"); if (!tr) return;
+  const P = [["README que enamora", "Explica qué hace el proyecto, cómo instalarlo y muestra capturas. Es la portada de tu trabajo."], ["Commits con sentido", "Commits pequeños con mensajes claros cuentan la historia de cómo construiste algo."], ["Problemas reales", "Proyectos que resuelven una necesidad concreta pesan más que mil tutoriales copiados."], ["Demo en vivo", "Un enlace funcionando, como esta página en AWS EC2, vale más que una descripción."], ["Muestra el proceso", "Bocetos, decisiones de arquitectura y errores corregidos demuestran cómo piensas."], ["Constancia", "Un poco cada semana: el historial de GitHub muestra disciplina."]];
+  let key = "portafolio-checks", saved = [];
+  try { saved = JSON.parse(localStorage.getItem(key) || "[]"); } catch (e) {}
+  tr.innerHTML = P.map(([t, d], i) => `<div class="pcard${saved.includes(i) ? " done" : ""}"><span class="pn">0${i + 1}</span><h5>${t}</h5><p>${d}</p><label><input type="checkbox" data-i="${i}" ${saved.includes(i) ? "checked" : ""}> Ya lo cumplo</label></div>`).join("");
+  const upd = () => { const ch = $$("input", tr).filter(x => x.checked).map(x => +x.dataset.i); $$(".pcard", tr).forEach((c, i) => c.classList.toggle("done", ch.includes(i))); $("#pbar").style.width = ch.length / P.length * 100 + "%"; $("#ptxt").textContent = `${ch.length} / ${P.length} reglas cumplidas${ch.length === P.length ? " · ¡portafolio nivel héroe!" : ""}`; try { localStorage.setItem(key, JSON.stringify(ch)); } catch (e) {} };
+  tr.addEventListener("change", upd); upd();
+})();
+
+/* ---------- Diagrama de Venn ---------- */
+(function venn() {
+  const svg = $("#venn"); if (!svg) return;
+  const Z = {
+    D: ["Desarrollo de software", "Desde Algoritmia y Programación hasta Arquitectura de Software.", [["Algoritmia y Programación", "Ing. Manuel Báez · 2022-1"], ["Estructuras de Datos", "2024-1 · listas enlazadas en C++"], ["Desarrollo de software: Git, GitHub, ramas y FastAPI", "Ing. Sergio Galvis Motoa · 2025-3"], ["Arquitectura de Software", "Ing. Sergio Arturo Piñeros · 2026-3"]]],
+    I: ["Infraestructura de TI", "Desde Estructuras Discretas hasta las materias que desbloquea Administración de Redes.", [["Estructuras Discretas", "La base lógica"], ["Redes Computacionales", "Ing. Andrés Torres · intersemestral 2026-2"], ["Administración de Redes", "Ing. Andrés Torres · cursándola"], ["Desbloquea en 7.º semestre", "Seguridad Informática · Infraestructura de TI · Informática Social"]]],
+    C: ["Ciencias de la computación", "Desde la ingeniería de datos hasta el deep learning.", [["Ingeniería de Datos", "Ing. Diana Toquica · 2026-3 · desarrollo web y analítica"], ["Data Science Fundamentals", "Ing. Sara Sánchez"], ["Problem Discovery and Solution Design with AI", "Ing. Juan Carlos Navarro · 2026-3"], ["Deep Learning y transformers", "Diego Osorio: redes neuronales que aprenden de cantidades masivas de datos"]]],
+    DI: ["Desarrollo + Infraestructura", "Donde el código llega a la nube.", [["Esta misma página", "Servidor Apache en AWS EC2 · Taller 3"], ["git push", "Del computador a GitHub"]]],
+    DC: ["Desarrollo + Ciencias de la computación", "Donde los datos se vuelven productos inteligentes.", [["Formulación y Evaluación de Proyectos", "Ing. Hellen Parra"], ["Problem Discovery with AI", "Ing. Juan Carlos Navarro · intersección con proyectos"]]],
+    IC: ["Infraestructura + Ciencias de la computación", "Donde los datos protegen las redes.", [["Exploits, PLC, hipervisores y sandbox", "Luis Salazar"], ["Ataques y phishing cada pocos minutos", "Diego Osorio"]]],
+    DIC: ["El centro: ingeniero integral", "Las tres ramas juntas. Aquí está mi meta.", [["Ciberseguridad", "Mi especialización a futuro: necesita entender el desarrollo, la infraestructura y la IA"], ["Las bases de todo", "Fundamentación Matemática, Algoritmia y Pensamiento Sistémico"]]]
+  };
+  const names = { D: "Desarrollo", I: "Infraestructura", C: "Ciencias", DI: "Nube", DC: "IA aplicada", IC: "Seguridad", DIC: "Centro ◆" };
+  $("#vbtns").innerHTML = Object.keys(Z).map(k => `<button data-z="${k}">${names[k]}</button>`).join("");
+  const C = { D: [145, 140], I: [255, 140], C: [200, 235] };
+  function show(k) {
+    svg.classList.add("sel");
+    $$(".vc", svg).forEach(c => c.classList.toggle("on", k.includes(c.dataset.c)));
+    $$("#vbtns button").forEach(b => b.classList.toggle("on", b.dataset.z === k));
+    const [t, d, list] = Z[k];
+    $("#vpanel").innerHTML = `<h4>${t}</h4><p>${d}</p><ol>${list.map(([a, b], i) => `<li style="animation-delay:${i * 90}ms">${esc(a)}<small>${esc(b)}</small></li>`).join("")}</ol>`;
+  }
+  svg.addEventListener("click", e => {
+    const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+    const q = p.matrixTransform(svg.getScreenCTM().inverse());
+    const k = ["D", "I", "C"].filter(c => Math.hypot(q.x - C[c][0], q.y - C[c][1]) <= 112).join("");
+    if (Z[k]) show(k);
+  });
+  $("#vbtns").addEventListener("click", e => { const b = e.target.closest("button"); if (b) show(b.dataset.z); });
+  show("DIC");
+})();
+
+/* ---------- Recorrido de IA ---------- */
+(function aiflow() {
+  const b = $("#aiplay"); if (!b) return;
+  const items = $$("#aiflow .ai");
+  items.forEach(it => it.addEventListener("click", () => it.classList.toggle("on")));
+  b.addEventListener("click", async () => {
+    b.disabled = true; items.forEach(i => i.classList.remove("on"));
+    for (const it of items) { it.classList.add("on"); await sleep(700); }
+    b.disabled = false; b.textContent = "↺ Repetir recorrido";
+  });
+})();
+
+/* ---------- Contador de ataques ---------- */
+(function atk() {
+  const b = $("#atkGo"); if (!b) return;
+  b.addEventListener("click", () => {
+    b.disabled = true; const t0 = performance.now(), D = reduce ? 1 : 10000;
+    (function f(t) {
+      const p = Math.min(1, (t - t0) / D);
+      $("#atkNum").textContent = Math.round(p * 10000).toLocaleString("es-CO");
+      $("#atkBar").style.width = p * 100 + "%";
+      if (p < 1) requestAnimationFrame(f); else { b.disabled = false; b.textContent = "↺ Otra vez"; }
+    })(t0);
+  });
+})();
+
+/* ---------- Programas de la facultad ---------- */
+(function progs() {
+  const tr = $("#progs"); if (!tr) return;
+  const P = [
+    ["#4db1ff", "💻", "Ingeniería de Sistemas y Computación + Ingeniería de Datos con IA", "Directores: Carlos Augusto Sánchez Martelo y Fran Romero Álvarez", "Van de la mano: el software necesita datos y la IA necesita software que la lleve al mundo real.", ["IA", "Machine Learning", "Datos"]],
+    ["#d4ff00", "📡", "Ingeniería Electrónica y Telecomunicaciones", "Expertos: Álvaro y Andrés Rodríguez", "Fundamental para el futuro: IoT (internet de las cosas) y sistemas embebidos. Necesitamos ingenieros electrónicos.", ["IoT", "Embebidos", "Redes"]],
+    ["#3dff2e", "🏗", "Ingeniería Civil", "Directora: Marisol Necomon", "Temas como sedimentación y confinamiento, expuestos por el Ing. Juan Rodríguez, con experiencia en el IDIGER (Instituto Distrital de Gestión de Riesgos y Cambio Climático).", ["Gestión del riesgo", "Cambio climático"]],
+    ["#7dff5a", "🏭", "Ingeniería Industrial", "Directora: Francy Rocío Castellanos Oviedo", "Liderar empresas con datos, innovación y tecnología, y lograr que los proyectos sean sostenibles en el tiempo, alineados con los ODS 9 (industria e innovación) y 17 (alianzas), y con normas de ISO e ICONTEC.", ["ODS", "ISO 9001", "ICONTEC"]]
+  ];
+  tr.innerHTML = P.map(([c, ic, t, d, p, tags]) => `<article class="prog" style="--c:${c}"><span class="ic">${ic}</span><h5>${t}</h5><span class="dir">${d}</span><p>${p}</p><div class="tags">${tags.map(x => `<span>${x}</span>`).join("")}</div></article>`).join("");
+  const mv = d => tr.scrollBy({ left: d * (tr.firstElementChild.offsetWidth + 14), behavior: "smooth" });
+  $("#pcPrev").addEventListener("click", () => mv(-1)); $("#pcNext").addEventListener("click", () => mv(1));
+})();
+
+/* ---------- Cadena de la sugerencia ---------- */
+(function chain() {
+  const b = $("#chainGo"); if (!b) return;
+  b.addEventListener("click", async () => {
+    b.disabled = true; const li = $$("#chain li"); li.forEach(l => l.classList.remove("on"));
+    for (const l of li) { l.classList.add("on"); await sleep(450); }
+    b.textContent = "✓ Sugerencia en camino"; await sleep(1500); b.disabled = false; b.textContent = "✉ Enviar otra vez";
+  });
+})();
+
+/* ---------- Técnica Feynman ---------- */
+(function fey() {
+  const sel = $("#fsel"); if (!sel) return;
+  const F = [
+    ["git commit", "Registra en el historial del repositorio una instantánea de los cambios preparados en el staging area, identificada por un hash SHA y un mensaje.", "Es como tomarle una foto a tu proyecto y escribir detrás qué cambió. Si algo sale mal, puedes volver a esa foto."],
+    ["Endpoint", "Una ruta de una API (método HTTP + URL) que recibe peticiones y devuelve una respuesta, como JSON o HTML.", "Es como una ventanilla de un banco: llegas a la ventanilla correcta, pides algo y te entregan una respuesta."],
+    ["Arquitectura", "La estructura fundamental de un sistema: sus componentes, relaciones y las decisiones que garantizan los atributos de calidad.", "Es el plano de una casa antes de construirla: dónde va cada cuarto para que la casa sea segura y cómoda."],
+    ["Red neuronal", "Modelo computacional de capas de neuronas artificiales que ajusta sus pesos a partir de datos para reconocer patrones.", "Es como aprender a reconocer perros viendo miles de fotos: con cada ejemplo el cerebro (o la red) se equivoca menos."],
+    ["Lista enlazada", "Estructura de datos dinámica donde cada nodo guarda un dato y un puntero al siguiente nodo.", "Es como un tren: cada vagón lleva su carga y está enganchado al siguiente. El último no tiene a nadie detrás (NULL)."]
+  ];
+  let i = 0, fey = false;
+  sel.innerHTML = F.map((f, k) => `<button data-k="${k}">${f[0]}</button>`).join("");
+  const show = () => { $$("button", sel).forEach((b, k) => b.classList.toggle("on", k === i)); const p = $("#ftext"); p.style.animation = "none"; void p.offsetWidth; p.style.animation = ""; p.textContent = F[i][fey ? 2 : 1]; $("#fTec").setAttribute("aria-pressed", !fey); $("#fFey").setAttribute("aria-pressed", fey); };
+  sel.addEventListener("click", e => { const b = e.target.closest("button"); if (b) { i = +b.dataset.k; show(); } });
+  $("#fTec").addEventListener("click", () => { fey = false; show(); }); $("#fFey").addEventListener("click", () => { fey = true; show(); });
+  show();
+})();
+
+/* ---------- Curva del olvido ---------- */
+(function curve() {
+  const svg = $("#curve"); if (!svg) return;
+  const W = 600, H = 280, L = 46, R = 14, T = 16, B = 40, D = 30;
+  const x = d => L + d / D * (W - L - R), y = r => T + (1 - r) * (H - T - B);
+  const REV = [1, 3, 7, 14, 28];
+  function series(withRev) {
+    const pts = []; let last = 0, S = 1.6;
+    for (let d = 0; d <= D + 1e-9; d += .1) {
+      const dd = Math.round(d * 10) / 10;
+      if (withRev && REV.includes(dd) && dd !== last) { pts.push([dd, Math.exp(-(dd - last) / S)]); last = dd; S *= 2.6; }
+      pts.push([dd, Math.exp(-(dd - last) / S)]);
+    }
+    return pts;
+  }
+  const path = pts => pts.map((p, i) => (i ? "L" : "M") + x(p[0]).toFixed(1) + " " + y(p[1]).toFixed(1)).join("");
+  let g = "";
+  [0, .25, .5, .75, 1].forEach(r => g += `<line class="ax" x1="${L}" x2="${W - R}" y1="${y(r)}" y2="${y(r)}"/><text x="${L - 8}" y="${y(r) + 4}" text-anchor="end">${r * 100}%</text>`);
+  [0, 7, 14, 21, 28].forEach(d => g += `<text x="${x(d)}" y="${H - B + 18}" text-anchor="middle">día ${d}</text>`);
+  g += `<text x="${L}" y="${H - 4}">Tiempo →</text><text x="${W - R}" y="${T + 10}" text-anchor="end">Lo que recuerdas</text>`;
+  svg.innerHTML = g + `<path class="c0" id="c0" d="${path(series(false))}"/><path class="c1" id="c1" d="${path(series(true))}" style="opacity:0"/>` + REV.map(d => `<circle class="dot" cx="${x(d)}" cy="${y(1)}" r="5" style="opacity:0"/>`).join("");
+  function anim(p) { const len = p.getTotalLength ? p.getTotalLength() : 1500; p.style.transition = "none"; p.style.strokeDasharray = len; p.style.strokeDashoffset = len; void p.getBoundingClientRect(); p.style.transition = reduce ? "none" : "stroke-dashoffset 1.8s ease"; p.style.strokeDashoffset = 0; }
+  const bs = $$(".cbtns button");
+  bs.forEach(b => b.addEventListener("click", () => {
+    bs.forEach(x => x.classList.toggle("on", x === b)); const m = +b.dataset.m;
+    $("#c1").style.opacity = m; $$("#curve .dot").forEach(d => d.style.opacity = m);
+    anim(m ? $("#c1") : $("#c0"));
+  }));
+  const io2 = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { anim($("#c0")); io2.disconnect(); } }), { threshold: .4 });
+  io2.observe(svg);
+})();
+
+/* ---------- Línea del tiempo de la memoria ---------- */
+(function rt() {
+  const tr = $("#rtrack"); if (!tr) return;
+  const S = "var(--cyan)", A = "var(--pink)";
+  const E = [
+    ["1885", S, "Repetición espaciada", "Hermann Ebbinghaus", "Psicólogo alemán, pionero: descubrió la curva del olvido y el efecto del espaciado. Aprender en intervalos funciona mejor que estudiar todo de una vez."],
+    ["1890", A, "Active recall", "William James", "En Principios de Psicología señaló que el esfuerzo de sacar información de la mente la consolida más que leer de forma pasiva."],
+    ["1917", A, "Active recall", "Arthur Gates", "Primer gran estudio empírico: quienes recitaban de memoria retenían mucho más que quienes solo releían."],
+    ["1932", S, "Repetición espaciada", "Cecil Alec Mace", "Fue el primero en proponer formalmente un sistema de estudio con repasos espaciados."],
+    ["1970s", S, "Repetición espaciada", "Sebastian Leitner", "Creó el Sistema Leitner: flashcards en cajas que se repasan cada vez menos cuando las aciertas. Lo puedes jugar abajo."],
+    ["1980s", S, "Repetición espaciada", "Piotr Woźniak", "Creó SuperMemo, el primer algoritmo que calcula el mejor momento para repasar justo antes de olvidar. Inspira apps como Anki."],
+    ["2006", A, "Active recall", "Roediger y Karpicke", "En la Universidad de Washington demostraron el «efecto de prueba»: obligarte a recordar es la técnica más poderosa para retener a largo plazo."]
+  ];
+  tr.innerHTML = E.map(([y, c, k, n, d]) => `<article class="rcard" style="--c:${c}"><div class="kind">${k}</div><div class="yr">${y}</div><h5>${n}</h5><p>${d}</p></article>`).join("");
+})();
+
+/* ---------- Cajas de Leitner ---------- */
+(function leitner() {
+  const card = $("#lcard"); if (!card) return;
+  const Q = [
+    ["¿Qué comando convierte una carpeta en repositorio de Git?", "git init"],
+    ["¿Qué hace git add?", "Prepara los cambios en el staging area para el próximo commit"],
+    ["¿Qué comando sube main a GitHub y la deja vinculada?", "git push -u origin main"],
+    ["¿Quién creó FastAPI?", "Sebastián Ramírez (tiangolo), colombiano"],
+    ["¿Qué atributo de calidad mide qué tan fácil es usar un sistema?", "La usabilidad"],
+    ["¿Qué es el puente entre los requerimientos y el diseño?", "La arquitectura de software"],
+    ["¿Quién descubrió la curva del olvido?", "Hermann Ebbinghaus, en 1885"],
+    ["¿Qué es un sandbox?", "Un entorno aislado para analizar algo sospechoso sin riesgo"],
+    ["¿Qué demostraron Roediger y Karpicke?", "El efecto de prueba: recordar activamente retiene más que releer"]
+  ];
+  let box = Q.map(() => 1), cur = -1, flipped = false, last = -1;
+  const pick = () => {
+    const minBox = Math.min(...box); if (minBox === 3 && box.every(b => b === 3)) return -1;
+    const pool = box.map((b, i) => [b, i]).filter(([b, i]) => b < 3 && i !== last);
+    const w = pool.flatMap(([b, i]) => b === 1 ? [i, i, i] : [i]);
+    return (w.length ? w : box.map((b, i) => i).filter(i => box[i] < 3))[Math.floor(Math.random() * (w.length || 1))];
+  };
+  function draw() {
+    $("#lboxes").innerHTML = [1, 2, 3].map(b => `<div class="${cur >= 0 && box[cur] === b ? "cur" : ""}"><b>${box.filter(x => x === b).length}</b>Caja ${b}<small>${["repasar ya", "repasar luego", "dominadas"][b - 1]}</small></div>`).join("");
+  }
+  function next() {
+    cur = pick(); flipped = false; card.classList.remove("on");
+    if (cur < 0) { $("#lq").innerHTML = "¡Todas dominadas! 🏆<small>Así funciona la repetición espaciada</small>"; $("#la").textContent = ""; $("#lYes").disabled = $("#lNo").disabled = true; $("#lmsg").innerHTML = `<button class="pbtn" id="lAgain">↺ Jugar de nuevo</button>`; $("#lAgain").onclick = () => { box = Q.map(() => 1); $("#lYes").disabled = $("#lNo").disabled = false; $("#lmsg").textContent = ""; next(); }; draw(); return; }
+    setTimeout(() => { $("#lq").innerHTML = esc(Q[cur][0]) + "<small>Piensa tu respuesta y toca la tarjeta</small>"; $("#la").innerHTML = esc(Q[cur][1]) + "<small>¿Acertaste?</small>"; }, reduce ? 0 : 250);
+    draw();
+  }
+  const flip = () => { if (cur < 0) return; flipped = !flipped; card.classList.toggle("on", flipped); };
+  card.addEventListener("click", flip);
+  card.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+  const answer = ok => { if (cur < 0) return; if (!flipped) { flip(); $("#lmsg").textContent = "Primero mira la respuesta 😉"; return; } last = cur; box[cur] = ok ? Math.min(3, box[cur] + 1) : 1; $("#lmsg").textContent = ok ? "¡Sube de caja! La verás con menos frecuencia." : "Vuelve a la caja 1: la verás pronto otra vez."; next(); };
+  $("#lYes").addEventListener("click", () => answer(true)); $("#lNo").addEventListener("click", () => answer(false));
+  next();
+})();
+
+/* ---------- Texto escrito (typewriter) ---------- */
+(function type() {
+  const el = $("#typed"); let f = 0, i = 0, del = false;
+  if (reduce) { el.textContent = FRASES[0]; return; }
+  (function tick() {
+    const w = FRASES[f]; el.textContent = w.slice(0, i);
+    if (!del && i === w.length) { del = true; return setTimeout(tick, 1800); }
+    if (del && i === 0) { del = false; f = (f + 1) % FRASES.length; }
+    i += del ? -1 : 1; setTimeout(tick, del ? 30 : 60);
+  })();
+})();
+
+/* ---------- Terminal ---------- */
+let termDone = false;
+function runTerm() {
+  if (termDone) return; termDone = true;
+  const pre = $("#term"); let li = 0, ci = 0;
+  (function step() {
+    if (li >= TERMINAL.length) return;
+    const [txt, kind] = TERMINAL[li];
+    if (ci === 0) { const sp = document.createElement("span"); sp.className = kind === "ok" ? "ok" : kind === "wip" ? "wip" : "p"; pre.appendChild(sp); }
+    const sp = pre.lastChild; sp.textContent = txt.slice(0, ++ci);
+    if (ci >= txt.length) {
+      if (kind === "ok" && txt.startsWith("→")) sp.textContent += "  [OK]";
+      if (kind === "wip") sp.textContent += "  [PRÓXIMAMENTE]";
+      pre.appendChild(document.createTextNode("\n")); li++; ci = 0; setTimeout(step, 320);
+    } else setTimeout(step, reduce ? 0 : 22);
+  })();
+}
+
+/* ---------- Revelado al hacer scroll ---------- */
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); if (e.target.classList.contains("term")) runTerm(); io.unobserve(e.target); } }), { threshold: .12 });
+$$(".reveal").forEach(el => io.observe(el));
+
+/* ---------- Nav, barra de nivel y "LEVEL COMPLETE" ---------- */
+const secs = $$("main section"), navLinks = $$("#links a");
+let completed = false;
+function onScroll() {
+  const h = document.documentElement, p = Math.min(1, h.scrollTop / (h.scrollHeight - innerHeight || 1));
+  $("#lvl i").style.width = p * 100 + "%"; $("#lvlpct").textContent = Math.round(p * 100) + "%";
+  $("#nav").classList.toggle("solid", h.scrollTop > 40);
+  let cur = ""; secs.forEach(s => { if (s.getBoundingClientRect().top < innerHeight * .4) cur = s.id; });
+  navLinks.forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + cur));
+  if (p > .985 && !completed) { completed = true; const t = $("#toast"); t.classList.add("on"); setTimeout(() => t.classList.remove("on"), 3200); }
+}
+addEventListener("scroll", () => requestAnimationFrame(onScroll), { passive: true }); onScroll();
+
+/* ---------- Reloj del pie de página ---------- */
+const clock = () => $("#clock").textContent = new Date().toLocaleString("es-CO", { dateStyle: "full", timeStyle: "medium" });
+clock(); setInterval(clock, 1000);
+
+/* ---------- Cielo estrellado del hero ---------- */
+(function sky() {
+  const cv = $("#sky"), ctx = cv.getContext("2d"); let stars = [], w, h;
+  const size = () => { w = cv.width = cv.offsetWidth * devicePixelRatio; h = cv.height = cv.offsetHeight * devicePixelRatio; stars = Array.from({ length: 140 }, () => ({ x: Math.random() * w, y: Math.random() * h * .7, r: Math.random() * 1.6 + .3, t: Math.random() * 6 })); };
+  size(); addEventListener("resize", size);
+  (function draw(ts) {
+    const g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "#020604"); g.addColorStop(.6, "#05200b"); g.addColorStop(1, "#0b3a14");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    stars.forEach(s => { ctx.globalAlpha = .4 + .6 * Math.abs(Math.sin((ts || 0) / 900 + s.t)); ctx.fillStyle = s.r > 1.2 ? "#7dff5a" : "#e8ffe0"; ctx.beginPath(); ctx.arc(s.x, s.y, s.r * devicePixelRatio, 0, 7); ctx.fill(); });
+    ctx.globalAlpha = 1;
+    if (!reduce && isVisible(cv)) requestAnimationFrame(draw); else setTimeout(() => requestAnimationFrame(draw), 500);
+  })();
+})();
+
+/* =========================================================
+   MÚSICA: usa parte1/audio/ben10-fuerza-alienigena.mp3 si existe;
+   si no, genera un sintetizador ochentero original en el navegador.
+   ========================================================= */
+const bgm = $("#bgm"), pp = $("#pp"), player = $("#player");
+let mode = "mp3", playing = false, ac = null, synthGain = null, synthTimer = null, ducked = false;
+bgm.volume = .5;
+// Prueba varios nombres/formatos hasta encontrar la canción
+const AUDIO_SRC = ["parte1/audio/ben_10_alien_force.mp3","parte1/audio/ben_10_alien_force.mp3.mp3","parte1/audio/Ben_10_Alien_Force.mp3","parte1/audio/ben10-fuerza-alienigena.mp3","parte1/audio/ben10-fuerza-alienigena.mp3.mp3","parte1/audio/ben10-fuerza-alienigena.mp4","parte1/audio/ben10-fuerza-alienigena.m4a","parte1/audio/ben10-fuerza-alienigena.webm","parte1/audio/Ben _10_Alien_Force_Opening_Theme_Extended.mp3"];
+let srcI = 0, audioOK = false;
+function toSynth(msg) { mode = "synth"; $("#ptitle").textContent = "Synth alienígena original"; $("#psub").textContent = msg; console.warn("[MÚSICA]", msg); if (playing) startSynth(); }
+bgm.addEventListener("canplay", () => { audioOK = true; mode = "mp3"; $("#ptitle").textContent = "Ben 10: Fuerza Alienígena"; $("#psub").textContent = "Tema · Andy Sturmer · Cartoon Network"; });
+bgm.addEventListener("error", () => {
+  if (audioOK) return;
+  srcI++;
+  if (srcI < AUDIO_SRC.length) { bgm.src = AUDIO_SRC[srcI]; bgm.load(); if (playing) bgm.play().catch(() => {}); }
+  else toSynth("No encontré la canción en parte1/audio (revisa nombre y extensión)");
+});
+bgm.src = AUDIO_SRC[0]; bgm.preload = "auto";
+function startSynth() {
+  ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+  ac.resume();
+  if (synthTimer) return;
+  synthGain = ac.createGain(); synthGain.gain.value = $("#vol").value * .25; synthGain.connect(ac.destination);
+  const prog = [[52, 55, 59], [48, 52, 55], [50, 54, 57], [47, 50, 54]]; // Em C D Bm (original)
+  let step = 0, next = ac.currentTime + .05; const spb = 60 / 132 / 2;
+  const note = (m, t, d, type, vol) => { const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.value = 440 * Math.pow(2, (m - 69) / 12); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .02); g.gain.exponentialRampToValueAtTime(.001, t + d); o.connect(g); g.connect(synthGain); o.start(t); o.stop(t + d + .05); };
+  synthTimer = setInterval(() => {
+    while (next < ac.currentTime + .2) {
+      const ch = prog[Math.floor(step / 16) % 4], k = step % 16;
+      note(ch[[0, 1, 2, 1, 0, 2, 1, 2][k % 8]] + 12 + (k >= 12 ? 12 : 0), next, spb * .8, "square", .09);
+      if (k % 2 === 0) note(ch[0] - 24, next, spb * 1.6, "sawtooth", .28);
+      if (k === 0) ch.forEach(m => note(m, next, spb * 15, "square", .04));
+      step++; next += spb;
+    }
+  }, 50);
+}
+function stopSynth() { clearInterval(synthTimer); synthTimer = null; if (synthGain) { synthGain.disconnect(); synthGain = null; } }
+function play() {
+  playing = true; pp.textContent = "❚❚"; pp.setAttribute("aria-label", "Pausar música"); player.classList.add("playing");
+  if (mode === "mp3") bgm.play().catch(err => { if (err.name === "NotAllowedError") { $("#psub").textContent = "Toca ▶ otra vez para iniciar la música"; pause(); } else if (err.name !== "AbortError" && !audioOK && srcI >= AUDIO_SRC.length - 1) toSynth("Error al reproducir: " + err.name); });
+  else startSynth();
+}
+function pause() { playing = false; pp.textContent = "▶"; pp.setAttribute("aria-label", "Reproducir música"); player.classList.remove("playing"); bgm.pause(); stopSynth(); }
+pp.addEventListener("click", () => playing ? pause() : play());
+$("#vol").addEventListener("input", e => { bgm.volume = +e.target.value; if (synthGain) synthGain.gain.value = e.target.value * .25; });
+function duckMusic(on) { if (on && playing) { ducked = true; pause(); } else if (!on && ducked) { ducked = false; play(); } }
+
+/* ---------- Pantalla de inicio ---------- */
+(function boot() {
+  let p = 0; const bar = $("#loadbar"), pct = $("#loadpct"), btn = $("#btnStart");
+  const t = setInterval(() => { p = Math.min(100, p + Math.random() * 18 + 6); bar.style.width = p + "%"; pct.textContent = Math.round(p) + "%"; if (p >= 100) { clearInterval(t); btn.classList.add("ready"); btn.focus(); } }, reduce ? 10 : 140);
+  const enter = withMusic => { const f = $("#flash"); f.classList.remove("go"); void f.offsetWidth; if (!reduce) f.classList.add("go"); $("#start").classList.add("hide"); if (withMusic) play(); };
+  btn.addEventListener("click", () => enter(true));
+  $("#btnSilent")?.addEventListener("click", () => enter(false));
+})();
+</script>
+</body>
+</html>
